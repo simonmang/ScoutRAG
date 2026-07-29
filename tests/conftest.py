@@ -12,6 +12,7 @@ def player_profile() -> PlayerSeasonProfile:
         player_id="player-7",
         player_name="Ada Beispiel",
         team_name="FC Beispiel",
+        team_names=["FC Beispiel"],
         competition_name="Bundesliga",
         season_name="2025/2026",
         position_group="central_midfield",

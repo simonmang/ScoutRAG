@@ -11,3 +11,8 @@ build/
 dist/
 htmlcov/
 
+# Downloaded and generated football data (keep directory documentation only)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep

@@ -13,6 +13,7 @@ class PlayerSeasonProfile(ScoutRAGModel):
     player_id: str = Field(min_length=1)
     player_name: str = Field(min_length=1)
     team_name: str = Field(min_length=1)
+    team_names: list[str] = Field(default_factory=list)
     competition_name: str = Field(min_length=1)
     season_name: str = Field(min_length=1)
     position_group: str = Field(min_length=1)

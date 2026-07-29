@@ -16,6 +16,6 @@ def test_health_endpoint() -> None:
     assert response.json() == {
         "status": "ok",
         "service": "ScoutRAG",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "environment": "test",
     }

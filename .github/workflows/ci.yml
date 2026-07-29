@@ -38,4 +38,4 @@ jobs:
         run: mypy
 
       - name: Test
-        run: pytest
+        run: pytest --cov=scoutrag --cov-report=term-missing

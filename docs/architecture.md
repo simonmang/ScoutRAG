@@ -52,6 +52,56 @@ flowchart LR
     end
 ```
 
+## Phase 2 data architecture
+
+```mermaid
+flowchart TD
+    subgraph Source["StatsBomb Open Data"]
+        C[competitions.json]
+        M[matches/{competition}/{season}.json]
+        E[events/{match}.json]
+        L[lineups/{match}.json]
+    end
+
+    C & M & E & L --> R[StatsBombOpenDataReader]
+    R --> N[Event normalization]
+    R --> MIN[Lineup interval minute calculation]
+    N --> AGG[Season aggregation]
+    MIN --> AGG
+    AGG --> PSP[(PlayerSeasonProfile)]
+    AGG --> PME[(PlayerMetricEvidence)]
+    PSP & PME --> VAL[Cross-record validation]
+    VAL --> PAR[Zstd Parquet artifacts]
+    VAL --> REP[Validation report]
+    PAR & REP --> MAN[SHA-256 manifest]
+```
+
+Phase 2 processes one explicit competition-season per pipeline execution. Raw counts are
+deliberately not converted to per-90 values or percentiles yet; those transformations belong to
+Phase 3 and remain independently testable.
+
+Competition-season identifiers describe source partitions, not guaranteed full-league coverage.
+Validation compares match counts across teams and reports strong imbalances. For the Bundesliga
+2023/2024 open-data partition, all 34 Bayer Leverkusen matches are present while opponent coverage
+is partial. Retrieval governance must not interpret those profiles as equally complete.
+
+The primary team for a player is the team with the most observed minutes. If a player changes
+teams during the season, `team_names` retains every observed team while the player remains one
+season profile. This makes transfer aggregation explicit rather than silently duplicating or
+merging identities.
+
+### Persisted artifacts
+
+| File | Contract |
+| --- | --- |
+| `matches.parquet` | normalized match context and observed duration |
+| `events.parquet` | flat event records with stable source references |
+| `player_match_minutes.parquet` | lineup-derived minutes and position groups |
+| `player_season_profiles.parquet` | raw season profiles; dynamic maps stored as deterministic JSON |
+| `player_metric_evidence.parquet` | source-linked raw values and comparison groups |
+| `validation_report.json` | validity, counts, errors, and limitations |
+| `manifest.json` | source metadata and artifact SHA-256 hashes |
+
 ## Request sequence
 
 ```mermaid
@@ -105,7 +155,8 @@ or API contracts.
 
 A `PlayerSeasonProfile` represents one player, one competition, and one season. Cross-season
 aggregation must be explicit in a future service and must never mutate or silently merge the
-source profiles.
+source profiles. Same-season transfers remain one profile with an explicit ordered `team_names`
+history and a minutes-based primary `team_name`.
 
 ### Provenance
 
@@ -147,4 +198,3 @@ underlying pipeline stages exist:
 | `POST /api/v1/search` | compact facade over the same retrieval pipeline |
 
 This prevents an HTTP facade from becoming a hidden monolithic implementation.
-
