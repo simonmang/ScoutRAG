@@ -92,9 +92,7 @@ class GroundedAnswerGenerator:
                     f"{governance.evidence_quality_score:.3f}."
                 )
             )
-        statements = [
-            f"{index}. {claim.text}" for index, claim in enumerate(draft.claims, start=1)
-        ]
+        statements = [f"{index}. {claim.text}" for index, claim in enumerate(draft.claims, start=1)]
         suffix = ""
         if governance.verdict is EvidenceVerdict.LIMITED and warnings:
             label = "Einschränkungen" if german else "Limitations"
@@ -103,9 +101,7 @@ class GroundedAnswerGenerator:
             query_id=pack.retrieval_trace.query_id,
             verdict=governance.verdict,
             text=" ".join([prefix, *statements]) + suffix,
-            cited_player_ids=list(
-                dict.fromkeys(claim.player_id for claim in draft.claims)
-            ),
+            cited_player_ids=list(dict.fromkeys(claim.player_id for claim in draft.claims)),
             warnings=warnings,
             generation_mode=GenerationMode.GROUNDED_MODEL,
             grounding=report,

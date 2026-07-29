@@ -105,13 +105,10 @@ class AnswerGroundingEvaluator:
             backend = _CaseBackend(case.draft)
             answer = GroundedAnswerGenerator(backend).generate(pack)
             accepted = answer.generation_mode is GenerationMode.GROUNDED_MODEL
-            passed = (
-                backend.called == case.expect_backend_call
-                and (
-                    accepted == case.expected_grounded
-                    if case.evaluates_draft
-                    else answer.generation_mode is GenerationMode.TEMPLATE
-                )
+            passed = backend.called == case.expect_backend_call and (
+                accepted == case.expected_grounded
+                if case.evaluates_draft
+                else answer.generation_mode is GenerationMode.TEMPLATE
             )
             results.append(
                 AnswerGroundingCaseResult(
@@ -136,9 +133,7 @@ class AnswerGroundingEvaluator:
 
 def load_answer_grounding_dataset(path: Path) -> AnswerGroundingDataset:
     """Load and strictly validate the committed answer-safety dataset."""
-    return AnswerGroundingDataset.model_validate(
-        json.loads(path.read_text(encoding="utf-8"))
-    )
+    return AnswerGroundingDataset.model_validate(json.loads(path.read_text(encoding="utf-8")))
 
 
 def _pack_with_verdict(
@@ -159,9 +154,7 @@ def _metrics(
 ) -> AnswerGroundingMetrics:
     paired = list(zip(cases, results, strict=True))
     safe = [
-        (case, result)
-        for case, result in paired
-        if case.evaluates_draft and case.expected_grounded
+        (case, result) for case, result in paired if case.evaluates_draft and case.expected_grounded
     ]
     unsafe = [
         (case, result)
@@ -169,20 +162,15 @@ def _metrics(
         if case.evaluates_draft and not case.expected_grounded
     ]
     fallbacks = [
-        (case, result)
-        for case, result in paired
-        if case.evaluates_draft and result.fallback_used
+        (case, result) for case, result in paired if case.evaluates_draft and result.fallback_used
     ]
-    abstentions = [
-        (case, result) for case, result in paired if not case.expect_backend_call
-    ]
+    abstentions = [(case, result) for case, result in paired if not case.expect_backend_call]
     accepted_safe = sum(
         result.generation_mode is GenerationMode.GROUNDED_MODEL for _, result in safe
     )
     blocked_unsafe = sum(result.fallback_used for _, result in unsafe)
     false_grounded = sum(
-        result.generation_mode is GenerationMode.GROUNDED_MODEL
-        for _, result in unsafe
+        result.generation_mode is GenerationMode.GROUNDED_MODEL for _, result in unsafe
     )
     correct_fallbacks = sum(not case.expected_grounded for case, _ in fallbacks)
     compliant_abstentions = sum(

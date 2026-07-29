@@ -96,9 +96,7 @@ class GroundednessValidator:
             violations.extend(claim_violations)
             if not claim_violations:
                 supported += 1
-            cited_fact_ids.extend(
-                fact_id for fact_id in claim.fact_ids if fact_id in fact_index
-            )
+            cited_fact_ids.extend(fact_id for fact_id in claim.fact_ids if fact_id in fact_index)
 
         count = len(draft.claims)
         unique_violations = list(dict.fromkeys(violations))
@@ -133,17 +131,11 @@ class GroundednessValidator:
         unknown_fact_ids = [fact_id for fact_id in claim.fact_ids if fact_id not in fact_index]
         if unknown_fact_ids:
             violations.append(f"{label}: unknown fact IDs {unknown_fact_ids}")
-        cited_facts = [
-            fact_index[fact_id] for fact_id in claim.fact_ids if fact_id in fact_index
-        ]
-        mismatched = [
-            fact.fact_id for fact in cited_facts if fact.player_id != claim.player_id
-        ]
+        cited_facts = [fact_index[fact_id] for fact_id in claim.fact_ids if fact_id in fact_index]
+        mismatched = [fact.fact_id for fact in cited_facts if fact.player_id != claim.player_id]
         if mismatched:
             violations.append(f"{label}: facts belong to another player {mismatched}")
-        cited_facts = [
-            fact for fact in cited_facts if fact.player_id == claim.player_id
-        ]
+        cited_facts = [fact for fact in cited_facts if fact.player_id == claim.player_id]
         if not cited_facts:
             violations.append(f"{label}: no valid supporting facts")
             return violations
@@ -171,10 +163,7 @@ class GroundednessValidator:
             " ".join(
                 [
                     profile.player_name,
-                    *(
-                        f"{fact.display_name} {fact.value}"
-                        for fact in cited_facts
-                    ),
+                    *(f"{fact.display_name} {fact.value}" for fact in cited_facts),
                 ]
             )
         )
@@ -182,13 +171,10 @@ class GroundednessValidator:
         unsupported_tokens = sorted(
             token
             for token in claim_tokens
-            if token not in _SAFE_GLUE
-            and not _matches_supported_token(token, allowed_tokens)
+            if token not in _SAFE_GLUE and not _matches_supported_token(token, allowed_tokens)
         )
         if unsupported_tokens:
-            violations.append(
-                f"{label}: unsupported wording {unsupported_tokens}"
-            )
+            violations.append(f"{label}: unsupported wording {unsupported_tokens}")
         return violations
 
 
@@ -202,8 +188,7 @@ def _matches_supported_token(token: str, allowed: set[str]) -> bool:
     if len(token) < 5:
         return False
     return any(
-        len(candidate) >= 5
-        and (token.startswith(candidate[:5]) or candidate.startswith(token[:5]))
+        len(candidate) >= 5 and (token.startswith(candidate[:5]) or candidate.startswith(token[:5]))
         for candidate in allowed
     )
 

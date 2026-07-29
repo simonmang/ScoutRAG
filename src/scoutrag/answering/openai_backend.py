@@ -49,7 +49,5 @@ class OpenAIResponsesBackend:
         try:
             openai = import_module("openai")
         except ImportError as exc:
-            raise RuntimeError(
-                "OpenAI answer mode requires `pip install -e '.[llm]'`"
-            ) from exc
+            raise RuntimeError("OpenAI answer mode requires `pip install -e '.[llm]'`") from exc
         return openai.OpenAI()

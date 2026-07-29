@@ -45,9 +45,7 @@ def test_fact_catalog_preserves_values_and_source_references() -> None:
     percentile = catalog["metric:5579:pressures_per_90:0:percentile"]
     assert normalized.value == "14.3"
     assert percentile.value == "91"
-    assert normalized.source_reference == (
-        "statsbomb:competition=9:season=281:player=5579"
-    )
+    assert normalized.source_reference == ("statsbomb:competition=9:season=281:player=5579")
 
 
 def test_supported_claim_is_returned_with_fact_audit() -> None:
@@ -60,30 +58,21 @@ def test_supported_claim_is_returned_with_fact_audit() -> None:
     assert answer.generation_mode is GenerationMode.GROUNDED_MODEL
     assert answer.grounding.validation_passed
     assert answer.grounding.grounding_score == 1
-    assert "metric:5579:pressures_per_90:0:normalized" in (
-        answer.grounding.cited_fact_ids
-    )
+    assert "metric:5579:pressures_per_90:0:normalized" in (answer.grounding.cited_fact_ids)
     assert answer.cited_player_ids == ["5579"]
     assert "14.3" in answer.text
 
 
 def test_fabricated_number_is_blocked_and_template_replaces_it() -> None:
     dataset = load_answer_grounding_dataset(CASES_PATH)
-    fabricated = next(
-        case for case in dataset.cases if case.case_id == "fabricated-statistic"
-    )
+    fabricated = next(case for case in dataset.cases if case.case_id == "fabricated-statistic")
 
-    answer = GroundedAnswerGenerator(DraftBackend(fabricated.draft)).generate(
-        dataset.evidence_pack
-    )
+    answer = GroundedAnswerGenerator(DraftBackend(fabricated.draft)).generate(dataset.evidence_pack)
 
     assert answer.generation_mode is GenerationMode.SAFE_FALLBACK
     assert answer.grounding.fallback_used
     assert not answer.grounding.validation_passed
-    assert any(
-        "unsupported numbers ['99']" in item
-        for item in answer.grounding.violations
-    )
+    assert any("unsupported numbers ['99']" in item for item in answer.grounding.violations)
     assert "99" not in answer.text
     assert "14.3" in answer.text
 
@@ -91,14 +80,10 @@ def test_fabricated_number_is_blocked_and_template_replaces_it() -> None:
 def test_unsupported_tactical_inference_is_blocked() -> None:
     dataset = load_answer_grounding_dataset(CASES_PATH)
     tactical = next(
-        case
-        for case in dataset.cases
-        if case.case_id == "unsupported-tactical-inference"
+        case for case in dataset.cases if case.case_id == "unsupported-tactical-inference"
     )
 
-    answer = GroundedAnswerGenerator(DraftBackend(tactical.draft)).generate(
-        dataset.evidence_pack
-    )
+    answer = GroundedAnswerGenerator(DraftBackend(tactical.draft)).generate(dataset.evidence_pack)
 
     assert answer.generation_mode is GenerationMode.SAFE_FALLBACK
     assert any("unsupported wording" in item for item in answer.grounding.violations)
@@ -132,18 +117,12 @@ def test_backend_failure_is_audited_and_falls_back() -> None:
 
     assert answer.generation_mode is GenerationMode.SAFE_FALLBACK
     assert answer.grounding.fallback_used
-    assert answer.grounding.violations == [
-        "generation backend failed: TimeoutError"
-    ]
+    assert answer.grounding.violations == ["generation backend failed: TimeoutError"]
 
 
 def test_limited_model_answer_retains_limitations() -> None:
     dataset = load_answer_grounding_dataset(CASES_PATH)
-    limited = next(
-        case
-        for case in dataset.cases
-        if case.case_id == "supported-team-claim-limited"
-    )
+    limited = next(case for case in dataset.cases if case.case_id == "supported-team-claim-limited")
     governance = dataset.evidence_pack.governance.model_copy(
         update={"verdict": EvidenceVerdict.LIMITED}
     )

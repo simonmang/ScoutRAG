@@ -28,9 +28,7 @@ def build_generation_input(
         "evidence_quality_score": pack.governance.evidence_quality_score,
         "governance_reasons": pack.governance.reasons,
         "warnings": [*pack.governance.warnings, *pack.limitations],
-        "allowed_player_ids": [
-            candidate.profile.player_id for candidate in pack.candidates
-        ],
+        "allowed_player_ids": [candidate.profile.player_id for candidate in pack.candidates],
         "facts": [fact.model_dump(mode="json") for fact in catalog.facts],
     }
     return json.dumps(payload, ensure_ascii=False, indent=2)

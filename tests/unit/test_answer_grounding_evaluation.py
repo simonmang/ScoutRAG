@@ -9,9 +9,7 @@ from scoutrag.evaluation.answer_grounding import (
 
 
 def test_answer_grounding_dataset_blocks_every_adversarial_case() -> None:
-    dataset = load_answer_grounding_dataset(
-        Path("evaluation/answer_grounding_cases.json")
-    )
+    dataset = load_answer_grounding_dataset(Path("evaluation/answer_grounding_cases.json"))
 
     report = AnswerGroundingEvaluator().evaluate(dataset)
 
