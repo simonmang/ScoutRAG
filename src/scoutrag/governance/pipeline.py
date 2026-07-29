@@ -21,9 +21,17 @@ class GovernedRetrievalPipeline:
         self.evidence_index = evidence_index
         self.governor = governor
 
-    def search(self, query: str) -> RecommendationEvidencePack:
+    def search(
+        self,
+        query: str,
+        *,
+        result_count: int | None = None,
+    ) -> RecommendationEvidencePack:
         started = perf_counter()
-        retrieval_result = self.retrieval_pipeline.search(query)
+        retrieval_result = self.retrieval_pipeline.search(
+            query,
+            result_count=result_count,
+        )
 
         assembly_started = perf_counter()
         evidence = self.evidence_index.for_candidates(retrieval_result.candidates)

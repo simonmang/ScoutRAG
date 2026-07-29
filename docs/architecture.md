@@ -316,7 +316,7 @@ candidates.
 
 ### Governed generation
 
-The future `AnswerGenerator` receives only a `RecommendationEvidencePack`. Expected behavior:
+The `AnswerGenerator` receives only a `RecommendationEvidencePack`. Expected behavior:
 
 - `SUFFICIENT`: a complete evidence-backed recommendation is allowed.
 - `LIMITED`: results are allowed, with prominent limitations.
@@ -327,15 +327,32 @@ The future `AnswerGenerator` receives only a `RecommendationEvidencePack`. Expec
 Generation cannot calculate new statistics, add candidates, fill missing values, invent seasons,
 or create unsupported tactical claims.
 
-## Deployment boundary through Phase 7
+## Phase 8 transport architecture
 
-Only `GET /health` is exposed. Retrieval endpoints are intentionally deferred until their
-underlying pipeline stages exist:
+FastAPI is an adapter over the completed application pipeline. `GovernedPipelineProvider`
+constructs and caches one pipeline lazily so application import and `GET /health` do not download
+models or load data artifacts.
 
-| Future endpoint | Contract |
+```mermaid
+flowchart LR
+    RQ[RetrievalRequest] --> PV[Pydantic validation]
+    PV --> PP[GovernedPipelineProvider]
+    PP --> GP[GovernedRetrievalPipeline]
+    GP --> EP[(RecommendationEvidencePack)]
+    EP --> RE[POST /retrieve]
+    EP --> SE[POST /search compact projection]
+    EP --> UI[Explainability dashboard]
+    EP --> AR[POST /answer]
+    AR --> TG[TemplateAnswerGenerator]
+    TG --> GA[(GeneratedAnswer)]
+```
+
+| Endpoint | Contract |
 | --- | --- |
-| `POST /api/v1/retrieve` | returns `RecommendationEvidencePack` |
-| `POST /api/v1/answer` | renders a supplied or newly produced evidence pack |
-| `POST /api/v1/search` | compact facade over the same retrieval pipeline |
+| `POST /api/v1/retrieve` | returns the complete `RecommendationEvidencePack` |
+| `POST /api/v1/search` | compact facade over the same governed pipeline |
+| `POST /api/v1/answer` | renders one supplied and fully validated evidence pack |
 
-This prevents an HTTP facade from becoming a hidden monolithic implementation.
+`/answer` does not accept a query and does not hide another retrieval call. In Phase 8 its
+default adapter is deterministic and LLM-free. The dashboard is a pure consumer: it displays
+candidate evidence, governance factors, and trace data but owns no domain rules.

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="ScoutRAG — evidenzbasierte, nachvollziehbare Fußball-Spielersuche."
+    />
+    <title>ScoutRAG — Evidence Console</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script src="/assets/app.js" defer></script>
+  </head>
+  <body>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="ScoutRAG Startseite">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" role="img">
+            <path d="M8 10h32v7H8zM8 21h21v7H8zM8 32h32v7H8z"></path>
+            <circle cx="36" cy="24.5" r="5.5"></circle>
+          </svg>
+        </span>
+        <span>
+          <strong>ScoutRAG</strong>
+          <small>Evidence Console</small>
+        </span>
+      </a>
+      <nav class="header-nav" aria-label="Hauptnavigation">
+        <a href="#search">Suche</a>
+        <a href="#explainability">Explainability</a>
+        <a href="/docs">API Docs</a>
+      </nav>
+      <div class="system-pill">
+        <span class="pulse-dot"></span>
+        <span>LLM-free retrieval</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" id="search">
+        <div class="hero-copy">
+          <p class="eyebrow"><span>Phase 8</span> Evidence before eloquence</p>
+          <h1>Scouting, das seine <em>Belege zeigt.</em></h1>
+          <p class="hero-description">
+            Kombiniere exakte Suche, strukturierte Statistiken, BM25 und semantisches
+            Retrieval. ScoutRAG trennt Relevanz von Evidenzqualität und sagt auch,
+            wann eine Empfehlung nicht belastbar ist.
+          </p>
+        </div>
+
+        <div class="search-shell">
+          <form id="search-form" class="search-form">
+            <label for="query-input">Scouting-Anfrage</label>
+            <div class="search-row">
+              <div class="query-field">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"></circle>
+                  <path d="m16.5 16.5 4 4"></path>
+                </svg>
+                <input
+                  id="query-input"
+                  name="query"
+                  type="text"
+                  maxlength="500"
+                  value="Zeige das Profil von Aleksandar Pavlović"
+                  autocomplete="off"
+                  required
+                />
+              </div>
+              <select id="result-count" aria-label="Anzahl Ergebnisse">
+                <option value="3">Top 3</option>
+                <option value="5">Top 5</option>
+                <option value="10" selected>Top 10</option>
+              </select>
+              <button class="primary-button" type="submit">
+                <span>Analysieren</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6"></path>
+                </svg>
+              </button>
+            </div>
+          </form>
+          <div class="examples" aria-label="Beispielanfragen">
+            <span>Beispiele</span>
+            <button
+              type="button"
+              data-example="Top 3 torgefährliche Zehner mit mindestens 900 Minuten"
+            >
+              Torgefährliche Zehner
+            </button>
+            <button
+              type="button"
+              data-example="Pressingstarker Sechser von Bayern München"
+            >
+              Bayern-Sechser
+            </button>
+            <button
+              type="button"
+              data-example="Wer gewinnt die nächste Weltmeisterschaft?"
+            >
+              Safety-Test
+            </button>
+          </div>
+        </div>
+
+        <div class="architecture-strip" aria-label="Systemübersicht">
+          <div>
+            <strong>04</strong>
+            <span>Recall-Strategien</span>
+          </div>
+          <i></i>
+          <div>
+            <strong>10</strong>
+            <span>Evidence-Faktoren</span>
+          </div>
+          <i></i>
+          <div>
+            <strong>05</strong>
+            <span>Governance-Verdicts</span>
+          </div>
+          <i></i>
+          <div>
+            <strong>00</strong>
+            <span>LLM-Abhängigkeiten</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="loading-state" class="loading-state" hidden aria-live="polite">
+        <div class="loading-mark"><span></span><span></span><span></span></div>
+        <div>
+          <strong>Mehrstufige Suche läuft</strong>
+          <p>Query Analysis → Hybrid Retrieval → Governance</p>
+        </div>
+      </section>
+
+      <section id="results" class="results-section" hidden aria-live="polite">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Recommendation Evidence Pack</p>
+            <h2>Ergebnis & Nachvollziehbarkeit</h2>
+          </div>
+          <div class="query-meta">
+            <span id="query-id">Query —</span>
+            <span id="total-runtime">— ms</span>
+          </div>
+        </div>
+
+        <div class="governance-card" id="explainability">
+          <div class="verdict-block">
+            <span class="label">Governance Verdict</span>
+            <div class="verdict-row">
+              <span id="verdict-badge" class="verdict-badge">—</span>
+              <span id="quality-score" class="quality-score">0.000</span>
+            </div>
+            <p id="verdict-reason"></p>
+            <div id="warnings" class="notice-list"></div>
+          </div>
+          <div class="factor-block">
+            <div class="factor-heading">
+              <span class="label">Evidence Quality Factors</span>
+              <span>Regelbasierter Score, keine Wahrscheinlichkeit</span>
+            </div>
+            <div id="factor-grid" class="factor-grid"></div>
+          </div>
+        </div>
+
+        <div class="content-grid">
+          <section class="candidate-panel">
+            <div class="panel-heading">
+              <div>
+                <span class="label">Ranked Players</span>
+                <h3>Kandidaten</h3>
+              </div>
+              <span id="candidate-count" class="count-pill">0 Spieler</span>
+            </div>
+            <div id="candidate-list" class="candidate-list"></div>
+            <div id="empty-candidates" class="empty-state" hidden>
+              <span>Ø</span>
+              <strong>Keine belastbare Rangliste</strong>
+              <p>Die Governance-Erklärung zeigt, welche Evidenz fehlt.</p>
+            </div>
+          </section>
+
+          <aside class="answer-panel">
+            <div class="panel-heading">
+              <div>
+                <span class="label">Safe Answer</span>
+                <h3>Evidenzbasierte Erklärung</h3>
+              </div>
+              <span class="no-llm-pill">Template mode</span>
+            </div>
+            <p class="answer-intro">
+              Diese Antwort wird ausschließlich aus dem validierten Evidence Pack erzeugt.
+            </p>
+            <button id="answer-button" class="secondary-button" type="button">
+              Erklärung erzeugen
+            </button>
+            <div id="answer-output" class="answer-output" hidden>
+              <span id="answer-verdict"></span>
+              <p id="answer-text"></p>
+              <small id="answer-citations"></small>
+            </div>
+          </aside>
+        </div>
+
+        <section class="trace-panel">
+          <button
+            id="trace-toggle"
+            class="trace-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="trace-content"
+          >
+            <span>
+              <span class="label">Audit View</span>
+              <strong>Retrieval Trace & Laufzeiten</strong>
+            </span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+          </button>
+          <div id="trace-content" class="trace-content" hidden>
+            <div id="strategy-list" class="strategy-list"></div>
+            <div id="timing-list" class="timing-list"></div>
+            <pre id="filter-output"></pre>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer>
+      <span>ScoutRAG v0.8.0</span>
+      <span>Structured football evidence · transparent retrieval · safe abstention</span>
+      <a href="https://github.com/simonmang/ScoutRAG">GitHub Repository</a>
+    </footer>
+
+    <dialog id="player-dialog" class="player-dialog">
+      <button id="dialog-close" class="dialog-close" type="button" aria-label="Schließen">×</button>
+      <div id="dialog-content"></div>
+    </dialog>
+
+    <div id="error-toast" class="error-toast" hidden role="alert">
+      <strong>Die Anfrage konnte nicht verarbeitet werden.</strong>
+      <span id="error-text"></span>
+      <button id="error-close" type="button">Schließen</button>
+    </div>
+  </body>
+</html>

@@ -163,6 +163,15 @@ def test_team_name_becomes_a_hard_filter(profiles: list[PlayerSeasonProfile]) ->
     assert {candidate.profile.team_name for candidate in exact_candidates} == {"Bayern Munich"}
 
 
+def test_short_bayern_alias_becomes_a_hard_filter(
+    profiles: list[PlayerSeasonProfile],
+) -> None:
+    query = RuleBasedQueryAnalyzer(profiles).analyze("Bayern-Sechser mit mindestens 900 Minuten")
+
+    assert query.team_filters == ["Bayern Munich"]
+    assert query.requested_positions == ["defensive_midfield"]
+
+
 def test_query_analysis_preserves_unknown_competition_and_missing_metric_requests(
     profiles: list[PlayerSeasonProfile],
 ) -> None:

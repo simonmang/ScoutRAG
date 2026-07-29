@@ -102,6 +102,7 @@ OUT_OF_SCOPE_PATTERNS = (
 
 TEAM_ALIASES = {
     "bayern munich": (
+        "bayern",
         "bayern munich",
         "bayern münchen",
         "fc bayern münchen",

@@ -2,16 +2,33 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from scoutrag import __version__
+from scoutrag.answering.templates import TemplateAnswerGenerator
+from scoutrag.api.dependencies import (
+    GovernedPipelineProvider,
+    default_pipeline_loader,
+)
+from scoutrag.api.routes.dashboard import DASHBOARD_ROOT
+from scoutrag.api.routes.dashboard import router as dashboard_router
 from scoutrag.api.routes.health import router as health_router
+from scoutrag.api.routes.retrieval import router as retrieval_router
 from scoutrag.config import Settings, get_settings
+from scoutrag.governance.pipeline import GovernedRetrievalPipeline
 from scoutrag.logging import configure_logging
+from scoutrag.ports.answering import AnswerGenerator
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    *,
+    pipeline: GovernedRetrievalPipeline | None = None,
+    answer_generator: AnswerGenerator | None = None,
+) -> FastAPI:
     """Create an isolated app instance suitable for tests and deployment."""
     resolved_settings = settings or get_settings()
 
@@ -27,7 +44,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     application.state.settings = resolved_settings
+    application.state.pipeline_provider = GovernedPipelineProvider(
+        default_pipeline_loader(resolved_settings),
+        pipeline=pipeline,
+    )
+    application.state.answer_generator = answer_generator or TemplateAnswerGenerator()
     application.include_router(health_router)
+    application.include_router(retrieval_router, prefix=resolved_settings.api_prefix)
+    application.include_router(dashboard_router)
+    application.mount(
+        "/assets",
+        StaticFiles(directory=Path(DASHBOARD_ROOT)),
+        name="dashboard-assets",
+    )
     return application
 
 

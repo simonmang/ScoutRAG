@@ -38,9 +38,18 @@ class HybridRetrievalPipeline:
         self.player_reranker = player_reranker or NoOpPlayerReranker()
         self.candidate_pool_size = candidate_pool_size
 
-    def search(self, query: str) -> HybridRetrievalResult:
+    def search(
+        self,
+        query: str,
+        *,
+        result_count: int | None = None,
+    ) -> HybridRetrievalResult:
         started = perf_counter()
         query_profile, query_analysis_ms = _timed(lambda: self.query_analyzer.analyze(query))
+        if result_count is not None:
+            if not 1 <= result_count <= 100:
+                raise ValueError("result_count must be between 1 and 100")
+            query_profile = query_profile.model_copy(update={"result_count": result_count})
         retrieval_limit = max(self.candidate_pool_size, query_profile.result_count)
 
         candidates_by_strategy = {}

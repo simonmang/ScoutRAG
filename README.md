@@ -10,10 +10,10 @@ evidence governance. Its primary output is not free-form text: it is an auditabl
 `RecommendationEvidencePack` that can be inspected, evaluated, and optionally rendered by an
 LLM.
 
-> Project status: **Phase 7 — evidence governance and safe abstention**. A rule-based
-> `RecommendationGovernor` now evaluates ten inspectable evidence factors and produces a complete
-> LLM-free `RecommendationEvidencePack`. Versioned safety cases measure False Recommendation Rate,
-> abstention, coverage, selective accuracy, and correct `LIMITED` handling.
+> Project status: **Phase 8 — governed API and explainability dashboard**. The same lazy-loaded,
+> LLM-free retrieval pipeline now powers separate retrieve, compact-search, and answer endpoints.
+> A responsive evidence console exposes governance verdicts, all ten quality factors, candidate
+> provenance, metric evidence, filters, and stage timings.
 
 ## Why this is not a classic document RAG
 
@@ -67,8 +67,7 @@ flowchart TD
 
     classDef implemented fill:#dcfce7,stroke:#15803d,color:#052e16;
     classDef later fill:#f3f4f6,stroke:#6b7280,color:#111827;
-    class SB,DN,PS,ME,FE,QA,QP,ER,SR,SP,DR,F,CP,RR,G,EP implemented;
-    class API,AG,AA later;
+    class SB,DN,PS,ME,FE,QA,QP,ER,SR,SP,DR,F,CP,RR,G,EP,API,AG,AA implemented;
 ```
 
 The component boundaries are explicit and every recall strategy is independently testable. See
@@ -140,13 +139,43 @@ Implemented:
 - versioned abstention cases and False Recommendation Rate evaluation
 - offline-safe dense model loading through a resolved local model snapshot
 - `scoutrag-govern` and `scoutrag-govern-evaluate` command-line interfaces
+- lazy, thread-safe API composition over the same governed retrieval pipeline
+- separate `POST /api/v1/retrieve`, `/api/v1/search`, and `/api/v1/answer` contracts
+- a deterministic verdict-aware `TemplateAnswerGenerator` with safe abstention
+- responsive explainability dashboard with candidate details and retrieval trace
+- HTTP integration tests using the real model-free pipeline boundary
 
 Deliberately not implemented yet:
 
 - football-specific bi-encoder fine-tuning
 - football-specific cross-encoder fine-tuning
-- `/api/v1/retrieve`, `/api/v1/answer`, or `/api/v1/search`
-- dashboard and LLM generation
+- optional LLM-based answer generation
+- Phase 10 hallucination and groundedness evaluation
+
+## Phase 8 governed API and dashboard
+
+Start the application after building the local data artifacts:
+
+```powershell
+uvicorn scoutrag.main:app --reload
+```
+
+Open `http://127.0.0.1:8000/` for the evidence console. It visualizes the verdict and
+non-probabilistic Evidence Quality Score before any answer is requested.
+
+| Endpoint | Responsibility |
+| --- | --- |
+| `POST /api/v1/retrieve` | returns the complete `RecommendationEvidencePack` |
+| `POST /api/v1/search` | returns a compact projection from that same pipeline |
+| `POST /api/v1/answer` | renders only a supplied, already governed Evidence Pack |
+
+The Phase 8 answer adapter is deliberately deterministic and LLM-free. It can explain
+`SUFFICIENT` and `LIMITED` results, but abstains for `INSUFFICIENT`, `CONFLICTING`, and
+`OUT_OF_SCOPE` packs. It never performs retrieval implicitly, calculates new statistics, or adds
+players. Phase 10 can replace this adapter through the existing `AnswerGenerator` port without
+changing the retrieval API.
+
+See the [API and dashboard guide](docs/api.md) for request examples and local configuration.
 
 ## Phase 7 evidence governance
 
@@ -420,6 +449,7 @@ uvicorn scoutrag.main:app --reload
 
 Then open:
 
+- dashboard: `http://127.0.0.1:8000/`
 - health: `http://127.0.0.1:8000/health`
 - OpenAPI: `http://127.0.0.1:8000/docs`
 
@@ -430,8 +460,10 @@ overrides.
 
 ```text
 src/scoutrag/
-├── api/            # HTTP transport, kept separate from domain logic
+├── answering/      # verdict-aware deterministic answer projection
+├── api/            # HTTP transport and lazy dependency composition
 ├── application/    # composition contracts and temporary adapters
+├── dashboard/      # framework-free explainability console assets
 ├── data/           # download, normalization, minutes, validation, and Parquet
 ├── domain/         # typed, framework-independent football and evidence models
 ├── governance/     # evidence index, rule engine, pack assembly, and CLI
@@ -450,6 +482,7 @@ data/
 ├── raw/            # ignored downloaded JSON
 └── processed/      # ignored generated artifacts
 docs/
+├── api.md
 ├── architecture.md
 └── governance.md
 ```
@@ -463,7 +496,7 @@ docs/
 5. ✅ Golden retrieval dataset, candidate metrics, and ablation studies
 6. ✅ Cross-encoder reranking, before/after evaluation, and tested ONNX inference
 7. ✅ Rule-based evidence governance with false-recommendation evaluation
-8. Retrieve/answer/search APIs and explainability dashboard
+8. ✅ Retrieve/answer/search APIs and explainability dashboard
 9. Football bi-encoder fine-tuning with hard negatives
 10. Governed, grounded optional answer generation
 
