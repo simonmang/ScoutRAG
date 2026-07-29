@@ -855,8 +855,15 @@ h1 em {
 }
 
 .answer-output small {
+  display: block;
   color: rgba(255, 255, 255, 0.4);
   font-size: 0.67rem;
+}
+
+.answer-output .answer-grounding {
+  margin-top: 7px;
+  color: rgba(184, 237, 115, 0.68);
+  line-height: 1.45;
 }
 
 .empty-state {

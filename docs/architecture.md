@@ -391,3 +391,30 @@ The model checkpoint is independent of the persisted dense index. Activating it 
 `SCOUTRAG_DENSE_MODEL_NAME` to the local model path and rebuilding the index; this cannot alter the
 governance rules. Phase 9 keeps the checkpoint opt-in because it improves difficult-negative
 metrics but reduces Golden MRR and nDCG@5 on the small seed.
+
+## Phase 10 grounded generation architecture
+
+Generation remains downstream from the complete Evidence Pack and cannot replace retrieval,
+reranking, or governance.
+
+```mermaid
+flowchart LR
+    EP[(RecommendationEvidencePack)] --> GT{Governance gate}
+    GT -->|sufficient / limited| FC[Source-linked Fact Catalog]
+    FC --> PR[Evidence-bound prompt]
+    PR --> SB[StructuredAnswerBackend]
+    SB --> GD[(GroundedAnswerDraft)]
+    GD --> GV{GroundednessValidator}
+    GV -->|valid| DR[Deterministic renderer]
+    GV -->|invalid| TF[Template fallback]
+    GT -->|insufficient / conflicting / out of scope| TF
+    DR --> GA[(GeneratedAnswer + GroundingReport)]
+    TF --> GA
+```
+
+The provider returns typed claims rather than unrestricted final prose. Local validation checks
+candidate membership, Fact-ID existence and ownership, numeric literals, and supported wording.
+Limitations and the Evidence Quality Score are added by the deterministic renderer. Provider
+failure is therefore a controlled degradation to the same LLM-free template used by default.
+
+See `docs/answer-generation.md` for modes, configuration, threat model, and evaluation.

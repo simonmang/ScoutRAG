@@ -35,14 +35,14 @@
       </nav>
       <div class="system-pill">
         <span class="pulse-dot"></span>
-        <span>LLM-free retrieval</span>
+        <span>Grounded generation</span>
       </div>
     </header>
 
     <main>
       <section class="hero" id="search">
         <div class="hero-copy">
-          <p class="eyebrow"><span>Phase 8</span> Evidence before eloquence</p>
+          <p class="eyebrow"><span>Phase 10</span> Evidence before eloquence</p>
           <h1>Scouting, das seine <em>Belege zeigt.</em></h1>
           <p class="hero-description">
             Kombiniere exakte Suche, strukturierte Statistiken, BM25 und semantisches
@@ -123,8 +123,8 @@
           </div>
           <i></i>
           <div>
-            <strong>00</strong>
-            <span>LLM-Abhängigkeiten</span>
+            <strong>01</strong>
+            <span>Optionaler LLM-Adapter</span>
           </div>
         </div>
       </section>
@@ -191,7 +191,7 @@
                 <span class="label">Safe Answer</span>
                 <h3>Evidenzbasierte Erklärung</h3>
               </div>
-              <span class="no-llm-pill">Template mode</span>
+              <span id="answer-mode-badge" class="no-llm-pill">Template mode</span>
             </div>
             <p class="answer-intro">
               Diese Antwort wird ausschließlich aus dem validierten Evidence Pack erzeugt.
@@ -203,6 +203,7 @@
               <span id="answer-verdict"></span>
               <p id="answer-text"></p>
               <small id="answer-citations"></small>
+              <small id="answer-grounding" class="answer-grounding"></small>
             </div>
           </aside>
         </div>
@@ -231,7 +232,7 @@
     </main>
 
     <footer>
-      <span>ScoutRAG v0.9.0</span>
+      <span>ScoutRAG v0.10.0</span>
       <span>Structured football evidence · transparent retrieval · safe abstention</span>
       <a href="https://github.com/simonmang/ScoutRAG">GitHub Repository</a>
     </footer>

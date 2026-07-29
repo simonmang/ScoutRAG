@@ -8,6 +8,8 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from scoutrag import __version__
+from scoutrag.answering.generator import GroundedAnswerGenerator
+from scoutrag.answering.openai_backend import OpenAIResponsesBackend
 from scoutrag.answering.templates import TemplateAnswerGenerator
 from scoutrag.api.dependencies import (
     GovernedPipelineProvider,
@@ -48,7 +50,9 @@ def create_app(
         default_pipeline_loader(resolved_settings),
         pipeline=pipeline,
     )
-    application.state.answer_generator = answer_generator or TemplateAnswerGenerator()
+    application.state.answer_generator = answer_generator or _build_answer_generator(
+        resolved_settings
+    )
     application.include_router(health_router)
     application.include_router(retrieval_router, prefix=resolved_settings.api_prefix)
     application.include_router(dashboard_router)
@@ -58,6 +62,17 @@ def create_app(
         name="dashboard-assets",
     )
     return application
+
+
+def _build_answer_generator(settings: Settings) -> AnswerGenerator:
+    if settings.answer_mode == "openai":
+        return GroundedAnswerGenerator(
+            OpenAIResponsesBackend(
+                model=settings.openai_model,
+                max_output_tokens=settings.openai_max_output_tokens,
+            )
+        )
+    return TemplateAnswerGenerator()
 
 
 app = create_app()

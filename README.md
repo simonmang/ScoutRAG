@@ -10,10 +10,10 @@ evidence governance. Its primary output is not free-form text: it is an auditabl
 `RecommendationEvidencePack` that can be inspected, evaluated, and optionally rendered by an
 LLM.
 
-> Project status: **Phase 9 — football bi-encoder fine-tuning**. A versioned bilingual training
-> seed, constrained Hard-Negative miner, reproducible Sentence Transformers trainer, before/after
-> evaluation, and Model Card are complete. The selected checkpoint improves difficult-negative
-> discrimination but remains opt-in because Golden ranking quality regressed slightly.
+> Project status: **Phase 10 — grounded answer generation**. Optional schema-constrained model
+> output is gated by governance, restricted to a source-linked fact allowlist, and checked by a
+> deterministic groundedness validator. Unsafe drafts fall back to the LLM-free template instead
+> of reaching the API.
 
 ## Why this is not a classic document RAG
 
@@ -62,8 +62,11 @@ flowchart TD
     ME --> G
 
     EP --> API[Retrieve API and dashboard]
-    EP --> AG[Optional AnswerGenerator]
-    AG --> AA[Governed natural-language answer]
+    EP --> FC[Evidence Fact Catalog]
+    FC --> AG[Optional AnswerGenerator]
+    AG --> GV[Groundedness Validator]
+    GV --> AA[Governed natural-language answer]
+    GV -. invalid draft .-> TF[Safe Template Fallback]
 
     classDef implemented fill:#dcfce7,stroke:#15803d,color:#052e16;
     classDef later fill:#f3f4f6,stroke:#6b7280,color:#111827;
@@ -150,12 +153,57 @@ Implemented:
 - baseline-vs.-fine-tuned evaluation for Golden retrieval, difficult negatives, and language
   variants
 - a documented opt-in activation policy and complete football bi-encoder Model Card
+- source-linked `AllowedFact` catalogs derived only from the immutable Evidence Pack
+- schema-constrained `GroundedAnswerDraft` claims with explicit player and fact IDs
+- governance-gated model calls and deterministic abstention for unsafe verdicts
+- numeric, player, citation, and lexical groundedness validation before response delivery
+- safe template fallback with visible validation violations and generation mode
+- optional OpenAI Responses API adapter behind a vendor-neutral backend port
+- versioned hallucination cases, Groundedness metrics, and `scoutrag-answer-evaluate` CLI
 
 Deliberately not implemented yet:
 
 - football-specific cross-encoder fine-tuning
-- optional LLM-based answer generation
-- Phase 10 hallucination and groundedness evaluation
+- calibration against a larger, independently annotated answer-safety dataset
+
+## Phase 10 grounded answer generation
+
+Retrieval remains fully usable without an LLM. `SCOUTRAG_ANSWER_MODE=template` is the default.
+The optional model adapter can be enabled independently:
+
+```powershell
+python -m pip install -e ".[llm]"
+$env:OPENAI_API_KEY = "..."
+$env:SCOUTRAG_ANSWER_MODE = "openai"
+uvicorn scoutrag.main:app --reload
+```
+
+The adapter requests structured claims, not an unrestricted final answer. ScoutRAG then verifies
+candidate IDs, fact ownership, citations, every numeric literal, and supported wording locally.
+`INSUFFICIENT`, `CONFLICTING`, and `OUT_OF_SCOPE` verdicts bypass the model entirely. A backend
+error or invalid claim produces `generation_mode=safe_fallback` and exposes the rejected reasons
+in `grounding.violations`.
+
+Run the committed ten-case safety benchmark without an API key or model download:
+
+```powershell
+scoutrag-answer-evaluate
+```
+
+| Answer safety metric | Result |
+| --- | ---: |
+| Groundedness Pass Rate | 1.000000 |
+| Hallucination Block Rate | 1.000000 |
+| False Grounded Rate | **0.000000** |
+| Fallback Precision / Recall | 1.000000 / 1.000000 |
+| Abstention Compliance | 1.000000 |
+| Case Accuracy | 1.000000 |
+
+This small rule-authored regression seed tests fabricated numbers, added players, invented Fact
+IDs, model-side calculation, unsupported tactical inference, and governance abstention. It is a
+repeatable safety check—not evidence of calibrated production reliability. See
+[the answer-safety design](docs/answer-generation.md) and the
+[machine-readable summary](evaluation/answer_grounding_summary.json).
 
 ## Phase 9 football bi-encoder fine-tuning
 
@@ -205,11 +253,11 @@ non-probabilistic Evidence Quality Score before any answer is requested.
 | `POST /api/v1/search` | returns a compact projection from that same pipeline |
 | `POST /api/v1/answer` | renders only a supplied, already governed Evidence Pack |
 
-The Phase 8 answer adapter is deliberately deterministic and LLM-free. It can explain
+The default answer adapter remains deterministic and LLM-free. It can explain
 `SUFFICIENT` and `LIMITED` results, but abstains for `INSUFFICIENT`, `CONFLICTING`, and
 `OUT_OF_SCOPE` packs. It never performs retrieval implicitly, calculates new statistics, or adds
-players. Phase 10 can replace this adapter through the existing `AnswerGenerator` port without
-changing the retrieval API.
+players. Phase 10 adds an optional grounded model adapter through the existing `AnswerGenerator`
+port without changing the retrieval API.
 
 See the [API and dashboard guide](docs/api.md) for request examples and local configuration.
 

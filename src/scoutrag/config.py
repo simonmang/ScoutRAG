@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     dense_model_name: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     enable_dense_retrieval: bool = True
     local_files_only: bool = False
+    answer_mode: Literal["template", "openai"] = "template"
+    openai_model: str = "gpt-5.6-terra"
+    openai_max_output_tokens: int = Field(default=800, ge=100, le=4_000)
 
 
 @lru_cache

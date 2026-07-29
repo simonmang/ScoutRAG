@@ -80,12 +80,29 @@ Content-Type: application/json
 }
 ```
 
-Phase 8 uses `TemplateAnswerGenerator`, not an LLM. `SUFFICIENT` and `LIMITED` packs can cite only
-their returned player IDs and stored requested metrics. `INSUFFICIENT`, `CONFLICTING`, and
+The default uses `TemplateAnswerGenerator`, not an LLM. `SUFFICIENT` and `LIMITED` packs can cite
+only their returned player IDs and stored requested metrics. `INSUFFICIENT`, `CONFLICTING`, and
 `OUT_OF_SCOPE` packs abstain and cite no players.
 
 Keeping `/answer` separate makes answer behavior testable without rerunning retrieval and makes
-the future Phase 10 LLM adapter replaceable.
+the optional Phase 10 backend replaceable. Every response now includes:
+
+- `generation_mode`: `template`, `grounded_model`, or `safe_fallback`
+- `grounding.validation_passed` and a non-probabilistic grounding score
+- cited Fact IDs and claim counts
+- validation violations and whether fallback was used
+
+Enable the optional structured OpenAI adapter with:
+
+```powershell
+python -m pip install -e ".[llm]"
+$env:OPENAI_API_KEY = "..."
+$env:SCOUTRAG_ANSWER_MODE = "openai"
+uvicorn scoutrag.main:app
+```
+
+Unsafe verdicts never invoke it. Invalid or unavailable model output is replaced by the
+deterministic answer and marked `safe_fallback`; see `docs/answer-generation.md`.
 
 ## Dashboard
 

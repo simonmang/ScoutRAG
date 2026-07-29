@@ -6,6 +6,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from scoutrag.answering.generator import GroundedAnswerGenerator
+from scoutrag.answering.models import GroundedAnswerDraft, GroundedClaim
 from scoutrag.config import Settings
 from scoutrag.domain.player import PlayerMetricEvidence, PlayerSeasonProfile
 from scoutrag.governance.factory import build_governed_pipeline
@@ -145,6 +147,9 @@ def test_answer_renders_only_a_validated_evidence_pack(client: TestClient) -> No
     assert answer["cited_player_ids"] == ["5579"]
     assert "Evidence Quality Score" in answer["text"]
     assert "Einschränkungen" in answer["text"]
+    assert answer["generation_mode"] == "template"
+    assert answer["grounding"]["validation_passed"]
+    assert answer["grounding"]["generator"] == "template"
 
 
 def test_out_of_scope_answer_abstains_without_player_citations(
@@ -160,6 +165,66 @@ def test_out_of_scope_answer_abstains_without_player_citations(
     assert answer["verdict"] == "out_of_scope"
     assert answer["cited_player_ids"] == []
     assert "keine Ergebnisvorhersagen" in answer["text"]
+
+
+def test_answer_endpoint_exposes_validated_model_grounding() -> None:
+    class Backend:
+        @property
+        def model_name(self) -> str:
+            return "integration-model"
+
+        def generate_draft(
+            self,
+            *,
+            instructions: str,
+            input_text: str,
+        ) -> GroundedAnswerDraft:
+            assert "fact catalog" in instructions
+            assert "player:5579:team" in input_text
+            return GroundedAnswerDraft(
+                claims=[
+                    GroundedClaim(
+                        player_id="5579",
+                        text="Joshua Kimmich spielt für Bayern Munich.",
+                        fact_ids=["player:5579:name", "player:5579:team"],
+                    )
+                ]
+            )
+
+    app = create_app(
+        Settings(environment="test", enable_dense_retrieval=False),
+        pipeline=build_governed_pipeline(
+            [
+                profile(
+                    "5579",
+                    "Joshua Kimmich",
+                    "Bayern Munich",
+                    source_coverage=0.1,
+                    minutes=180,
+                    percentile=None,
+                )
+            ],
+            [metric("5579", percentile=None, minutes=180)],
+        ),
+        answer_generator=GroundedAnswerGenerator(Backend()),
+    )
+    with TestClient(app) as grounded_client:
+        pack = grounded_client.post(
+            "/api/v1/retrieve",
+            json={"query": "Zeige das Profil von Joshua Kimmich"},
+        ).json()
+        answer = grounded_client.post(
+            "/api/v1/answer",
+            json={"evidence_pack": pack},
+        ).json()
+
+    assert answer["generation_mode"] == "grounded_model"
+    assert answer["grounding"]["validation_passed"]
+    assert answer["grounding"]["generator"] == "integration-model"
+    assert answer["grounding"]["cited_fact_ids"] == [
+        "player:5579:name",
+        "player:5579:team",
+    ]
 
 
 def test_api_limits_result_count_and_validates_query(client: TestClient) -> None:
@@ -203,10 +268,12 @@ def test_dashboard_assets_and_openapi_are_exposed(client: TestClient) -> None:
     assert dashboard.status_code == 200
     assert "Evidence before eloquence" in dashboard.text
     assert "Recommendation Evidence Pack" in dashboard.text
+    assert "Phase 10" in dashboard.text
     assert css.status_code == 200
     assert "--green: #b8ed73" in css.text
     assert javascript.status_code == 200
     assert 'const API_PREFIX = "/api/v1"' in javascript.text
+    assert "safe_fallback" in javascript.text
     assert "/api/v1/retrieve" in openapi["paths"]
     assert "/api/v1/search" in openapi["paths"]
     assert "/api/v1/answer" in openapi["paths"]

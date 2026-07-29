@@ -136,3 +136,29 @@ scoutrag-bi-encoder evaluate --local-files-only
 Candidate Recall remains 1.000 for both. The model is opt-in because targeted hard-negative gains
 do not compensate for the small Golden ranking regression on this seed. Full aggregate values,
 training parameters, and limitations are committed in `bi_encoder_summary.json`.
+
+## Phase 10 answer grounding
+
+`answer_grounding_cases.json` contains ten schema-valid generated-draft fixtures. Two are
+grounded, five intentionally hallucinate or overreach, and three verify that unsafe governance
+verdicts bypass the model.
+
+```powershell
+scoutrag-answer-evaluate
+```
+
+| Metric | Result |
+| --- | ---: |
+| Groundedness Pass Rate | 1.000000 |
+| Hallucination Block Rate | 1.000000 |
+| False Grounded Rate | **0.000000** |
+| Fallback Precision | 1.000000 |
+| Fallback Recall | 1.000000 |
+| Safe Answer Coverage | 1.000000 |
+| Abstention Compliance | 1.000000 |
+| Case Accuracy | 1.000000 |
+
+The evaluator runs the fixtures through the production `GroundedAnswerGenerator` and local
+validator. It makes no network request and needs no API key. The committed
+`answer_grounding_summary.json` is a regression baseline over a small rule-authored seed, not a
+production guarantee.

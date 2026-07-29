@@ -1,6 +1,6 @@
 """Architectural ports for replaceable ScoutRAG components."""
 
-from scoutrag.ports.answering import AnswerGenerator
+from scoutrag.ports.answering import AnswerGenerator, StructuredAnswerBackend
 from scoutrag.ports.governance import RecommendationGovernor
 from scoutrag.ports.query_analysis import QueryAnalyzer
 from scoutrag.ports.reranking import PlayerReranker
@@ -14,4 +14,5 @@ __all__ = [
     "QueryAnalyzer",
     "RecommendationGovernor",
     "RetrievalFusion",
+    "StructuredAnswerBackend",
 ]

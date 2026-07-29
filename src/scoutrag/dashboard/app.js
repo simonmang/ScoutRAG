@@ -25,8 +25,10 @@ const elements = {
   answerButton: document.querySelector("#answer-button"),
   answerOutput: document.querySelector("#answer-output"),
   answerVerdict: document.querySelector("#answer-verdict"),
+  answerMode: document.querySelector("#answer-mode-badge"),
   answerText: document.querySelector("#answer-text"),
   answerCitations: document.querySelector("#answer-citations"),
+  answerGrounding: document.querySelector("#answer-grounding"),
   traceToggle: document.querySelector("#trace-toggle"),
   traceContent: document.querySelector("#trace-content"),
   strategies: document.querySelector("#strategy-list"),
@@ -59,6 +61,12 @@ const factorLabels = {
   season_consistency: "Saison-Konsistenz",
   missing_value_completeness: "Werte-Vollständigkeit",
   hard_filter_fulfillment: "Harte Filter",
+};
+
+const generationModeLabels = {
+  template: "Template mode",
+  grounded_model: "Grounded model",
+  safe_fallback: "Safe fallback",
 };
 
 elements.form.addEventListener("submit", async (event) => {
@@ -232,10 +240,18 @@ async function renderAnswer() {
       throw new Error(readError(answer));
     }
     elements.answerVerdict.textContent = verdictLabels[answer.verdict] || answer.verdict;
+    elements.answerMode.textContent =
+      generationModeLabels[answer.generation_mode] || answer.generation_mode;
     elements.answerText.textContent = answer.text;
     elements.answerCitations.textContent = answer.cited_player_ids.length
       ? `Belegte Player IDs: ${answer.cited_player_ids.join(", ")}`
       : "Keine Spielerzitate — das System enthält sich.";
+    const grounding = answer.grounding;
+    elements.answerGrounding.textContent = grounding.fallback_used
+      ? `Grounding-Prüfung blockiert: ${grounding.violations.join("; ")}`
+      : grounding.claim_count
+        ? `Grounding ${formatNumber(grounding.grounding_score, 3)} · ${grounding.supported_claim_count}/${grounding.claim_count} Claims · ${grounding.cited_fact_ids.length} Fact IDs`
+        : "Deterministische Projektion des Evidence Packs";
     elements.answerOutput.hidden = false;
   } catch (error) {
     showError(error.message || "Antwort konnte nicht erzeugt werden.");

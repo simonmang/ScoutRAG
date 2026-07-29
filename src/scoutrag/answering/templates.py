@@ -3,6 +3,8 @@
 from scoutrag.domain.evidence import (
     EvidenceVerdict,
     GeneratedAnswer,
+    GenerationMode,
+    GroundingReport,
     RecommendationEvidencePack,
 )
 from scoutrag.domain.player import PlayerMetricEvidence
@@ -75,6 +77,8 @@ class TemplateAnswerGenerator:
             text=text,
             cited_player_ids=cited_ids,
             warnings=warnings,
+            generation_mode=GenerationMode.TEMPLATE,
+            grounding=GroundingReport(generator="template"),
         )
 
     @staticmethod

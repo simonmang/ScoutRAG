@@ -1,5 +1,12 @@
 """Retrieval evaluation metrics, golden data, and ablation studies."""
 
+from scoutrag.evaluation.answer_grounding import (
+    AnswerGroundingDataset,
+    AnswerGroundingEvaluator,
+    AnswerGroundingMetrics,
+    AnswerGroundingReport,
+    load_answer_grounding_dataset,
+)
 from scoutrag.evaluation.dataset import load_golden_dataset
 from scoutrag.evaluation.governance import (
     GovernanceEvaluationReport,
@@ -29,6 +36,10 @@ from scoutrag.evaluation.runner import AblationRunner, RetrievalEvaluator
 __all__ = [
     "AblationReport",
     "AblationRunner",
+    "AnswerGroundingDataset",
+    "AnswerGroundingEvaluator",
+    "AnswerGroundingMetrics",
+    "AnswerGroundingReport",
     "EvaluationReport",
     "GoldenDataset",
     "GoldenJudgment",
@@ -47,6 +58,7 @@ __all__ = [
     "RetrievalEvaluator",
     "RetrievalMetrics",
     "evaluate_ranking",
+    "load_answer_grounding_dataset",
     "load_golden_dataset",
     "load_governance_dataset",
 ]

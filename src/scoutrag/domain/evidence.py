@@ -20,6 +20,35 @@ class EvidenceVerdict(StrEnum):
     OUT_OF_SCOPE = "out_of_scope"
 
 
+class GenerationMode(StrEnum):
+    """How the final natural-language projection was produced."""
+
+    TEMPLATE = "template"
+    GROUNDED_MODEL = "grounded_model"
+    SAFE_FALLBACK = "safe_fallback"
+
+
+class GroundingReport(ScoutRAGModel):
+    """Validation result for generated claims; the score is not a probability."""
+
+    validation_passed: bool = True
+    grounding_score: float = Field(default=1, ge=0, le=1)
+    claim_count: int = Field(default=0, ge=0)
+    supported_claim_count: int = Field(default=0, ge=0)
+    cited_fact_ids: list[str] = Field(default_factory=list)
+    violations: list[str] = Field(default_factory=list)
+    generator: str = Field(default="template", min_length=1)
+    fallback_used: bool = False
+
+    @model_validator(mode="after")
+    def validate_supported_claim_count(self) -> "GroundingReport":
+        if self.supported_claim_count > self.claim_count:
+            raise ValueError("supported_claim_count cannot exceed claim_count")
+        if self.validation_passed and self.violations:
+            raise ValueError("a passed grounding report cannot contain violations")
+        return self
+
+
 class RecommendationGovernance(ScoutRAGModel):
     """Transparent assessment of evidence quality, never a probability."""
 
@@ -108,3 +137,5 @@ class GeneratedAnswer(ScoutRAGModel):
     text: str = Field(min_length=1)
     cited_player_ids: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    generation_mode: GenerationMode = GenerationMode.TEMPLATE
+    grounding: GroundingReport = Field(default_factory=GroundingReport)

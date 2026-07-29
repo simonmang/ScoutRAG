@@ -1,0 +1,268 @@
+{
+  "schema_version": "phase10-answer-grounding-v1",
+  "evidence_pack": {
+    "query_profile": {
+      "original_query": "Pressingstarker Sechser von Bayern München",
+      "normalized_query": "pressingstarker sechser von bayern münchen",
+      "intent": "player_discovery",
+      "requested_positions": ["defensive_midfield"],
+      "requested_traits": ["pressing"],
+      "requested_metrics": ["pressures_per_90"],
+      "named_players": [],
+      "team_filters": ["Bayern Munich"],
+      "competition_filters": ["1. Bundesliga"],
+      "season_filters": ["2023/2024"],
+      "minimum_minutes": 900,
+      "result_count": 1,
+      "expected_evidence_types": ["player_metric_evidence"]
+    },
+    "governance": {
+      "verdict": "sufficient",
+      "evidence_quality_score": 0.9,
+      "reasons": ["Requested metric and comparison group are available."],
+      "missing_evidence": [],
+      "warnings": ["The evaluation fixture contains one season."],
+      "factors": {
+        "data_coverage": 0.9,
+        "played_minutes": 1.0,
+        "feature_availability": 1.0
+      }
+    },
+    "candidates": [
+      {
+        "profile": {
+          "player_id": "5579",
+          "player_name": "Joshua Kimmich",
+          "team_name": "Bayern Munich",
+          "team_names": ["Bayern Munich"],
+          "competition_name": "1. Bundesliga",
+          "season_name": "2023/2024",
+          "position_group": "defensive_midfield",
+          "minutes_played": 1200,
+          "structured_features": {"pressures_per_90": 14.3},
+          "percentiles": {"pressures_per_90": 91},
+          "profile_text": "Joshua Kimmich, defensive midfielder for Bayern Munich in 2023/2024.",
+          "data_quality": 0.9
+        },
+        "retrieval_trace": {
+          "player_id": "5579",
+          "retrieved_by": ["structured", "dense"],
+          "dense_score": 0.8,
+          "sparse_score": null,
+          "structured_score": 1.0,
+          "exact_score": null,
+          "fused_score": 0.9
+        },
+        "rank": 1,
+        "reranker_score": 0.87,
+        "ranking_reasons": ["Cross-encoder relevance"]
+      }
+    ],
+    "retrieval_trace": {
+      "query_id": "phase10-fixture",
+      "query_intent": "player_discovery",
+      "strategies_used": ["structured", "dense"],
+      "candidates_per_strategy": {"structured": 1, "dense": 1},
+      "candidates_before_reranking": 1,
+      "candidates_after_reranking": 1,
+      "filters_applied": {"team": "Bayern Munich", "minimum_minutes": 900},
+      "stage_timings_ms": {"retrieval": 1.0, "governance": 0.2}
+    },
+    "metric_evidence": {
+      "5579": [
+        {
+          "player_id": "5579",
+          "season_id": "281",
+          "metric_name": "pressures_per_90",
+          "raw_value": 190,
+          "normalized_value": 14.3,
+          "percentile": 91,
+          "comparison_group": "Bundesliga midfielders",
+          "sample_size": 1200,
+          "source_reference": "statsbomb:competition=9:season=281:player=5579"
+        }
+      ]
+    },
+    "limitations": ["Single-season evidence only."],
+    "missing_evidence": [],
+    "runtime_metrics": {
+      "total_ms": 2.0,
+      "query_analysis_ms": 0.2,
+      "candidate_retrieval_ms": 0.8,
+      "fusion_ms": 0.1,
+      "reranking_ms": 0.5,
+      "governance_ms": 0.2,
+      "evidence_assembly_ms": 0.2
+    }
+  },
+  "cases": [
+    {
+      "case_id": "supported-metric-claim",
+      "category": "grounded",
+      "verdict": "sufficient",
+      "draft": {
+        "claims": [{
+          "player_id": "5579",
+          "text": "Joshua Kimmich verzeichnet pressures per 90 14.3 im pressures per 90 percentile 91.",
+          "fact_ids": [
+            "player:5579:name",
+            "metric:5579:pressures_per_90:0:normalized",
+            "metric:5579:pressures_per_90:0:percentile"
+          ]
+        }]
+      },
+      "evaluates_draft": true,
+      "expected_grounded": true,
+      "expect_backend_call": true,
+      "rationale": "Every value and content word is supported by cited facts."
+    },
+    {
+      "case_id": "supported-team-claim-limited",
+      "category": "grounded_limited",
+      "verdict": "limited",
+      "draft": {
+        "claims": [{
+          "player_id": "5579",
+          "text": "Joshua Kimmich spielt für Bayern Munich.",
+          "fact_ids": ["player:5579:name", "player:5579:team"]
+        }]
+      },
+      "evaluates_draft": true,
+      "expected_grounded": true,
+      "expect_backend_call": true,
+      "rationale": "Limited answers may be generated but must retain deterministic limitations."
+    },
+    {
+      "case_id": "fabricated-statistic",
+      "category": "fabricated_number",
+      "verdict": "sufficient",
+      "draft": {
+        "claims": [{
+          "player_id": "5579",
+          "text": "Joshua Kimmich verzeichnet pressures per 90 99.",
+          "fact_ids": ["player:5579:name", "metric:5579:pressures_per_90:0:normalized"]
+        }]
+      },
+      "evaluates_draft": true,
+      "expected_grounded": false,
+      "expect_backend_call": true,
+      "rationale": "The number 99 does not exist in any cited fact."
+    },
+    {
+      "case_id": "unsupported-tactical-inference",
+      "category": "unsupported_inference",
+      "verdict": "sufficient",
+      "draft": {
+        "claims": [{
+          "player_id": "5579",
+          "text": "Joshua Kimmich controls transitions intelligently.",
+          "fact_ids": ["player:5579:name", "player:5579:team"]
+        }]
+      },
+      "evaluates_draft": true,
+      "expected_grounded": false,
+      "expect_backend_call": true,
+      "rationale": "No cited fact supports the tactical interpretation."
+    },
+    {
+      "case_id": "added-player",
+      "category": "unauthorized_player",
+      "verdict": "sufficient",
+      "draft": {
+        "claims": [{
+          "player_id": "10",
+          "text": "Lionel Messi spielt für Bayern Munich.",
+          "fact_ids": ["player:5579:team"]
+        }]
+      },
+      "evaluates_draft": true,
+      "expected_grounded": false,
+      "expect_backend_call": true,
+      "rationale": "Player 10 is not a returned candidate."
+    },
+    {
+      "case_id": "invented-fact-id",
+      "category": "invalid_citation",
+      "verdict": "sufficient",
+      "draft": {
+        "claims": [{
+          "player_id": "5579",
+          "text": "Joshua Kimmich verzeichnet assists 12.",
+          "fact_ids": ["player:5579:name", "metric:5579:assists:0:normalized"]
+        }]
+      },
+      "evaluates_draft": true,
+      "expected_grounded": false,
+      "expect_backend_call": true,
+      "rationale": "The cited assists fact does not exist."
+    },
+    {
+      "case_id": "model-side-calculation",
+      "category": "calculation",
+      "verdict": "sufficient",
+      "draft": {
+        "claims": [{
+          "player_id": "5579",
+          "text": "Joshua Kimmich hat 14.3 plus 91 gleich 105.3.",
+          "fact_ids": [
+            "player:5579:name",
+            "metric:5579:pressures_per_90:0:normalized",
+            "metric:5579:pressures_per_90:0:percentile"
+          ]
+        }]
+      },
+      "evaluates_draft": true,
+      "expected_grounded": false,
+      "expect_backend_call": true,
+      "rationale": "The derived number and calculation wording are not allowlisted."
+    },
+    {
+      "case_id": "insufficient-abstention",
+      "category": "governance_gate",
+      "verdict": "insufficient",
+      "draft": {
+        "claims": [{
+          "player_id": "5579",
+          "text": "Joshua Kimmich spielt für Bayern Munich.",
+          "fact_ids": ["player:5579:name", "player:5579:team"]
+        }]
+      },
+      "evaluates_draft": false,
+      "expected_grounded": false,
+      "expect_backend_call": false,
+      "rationale": "Insufficient evidence must bypass the model completely."
+    },
+    {
+      "case_id": "conflicting-abstention",
+      "category": "governance_gate",
+      "verdict": "conflicting",
+      "draft": {
+        "claims": [{
+          "player_id": "5579",
+          "text": "Joshua Kimmich spielt für Bayern Munich.",
+          "fact_ids": ["player:5579:name", "player:5579:team"]
+        }]
+      },
+      "evaluates_draft": false,
+      "expected_grounded": false,
+      "expect_backend_call": false,
+      "rationale": "Conflicting evidence must bypass the model completely."
+    },
+    {
+      "case_id": "out-of-scope-abstention",
+      "category": "governance_gate",
+      "verdict": "out_of_scope",
+      "draft": {
+        "claims": [{
+          "player_id": "5579",
+          "text": "Joshua Kimmich spielt für Bayern Munich.",
+          "fact_ids": ["player:5579:name", "player:5579:team"]
+        }]
+      },
+      "evaluates_draft": false,
+      "expected_grounded": false,
+      "expect_backend_call": false,
+      "rationale": "Out-of-scope questions must bypass the model completely."
+    }
+  ]
+}

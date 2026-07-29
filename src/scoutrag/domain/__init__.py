@@ -3,6 +3,8 @@
 from scoutrag.domain.evidence import (
     EvidenceVerdict,
     GeneratedAnswer,
+    GenerationMode,
+    GroundingReport,
     RecommendationEvidencePack,
     RecommendationGovernance,
     RuntimeMetrics,
@@ -26,6 +28,8 @@ __all__ = [
     "CandidateRetrievalTrace",
     "EvidenceVerdict",
     "GeneratedAnswer",
+    "GenerationMode",
+    "GroundingReport",
     "HybridRetrievalResult",
     "MatchEvidence",
     "MetricDefinition",
