@@ -214,6 +214,35 @@ broad pool before `PlayerReranker`; Precision@K, Recall@K, MRR, and nDCG@K use t
 Reports retain returned player IDs per query, making metric changes debuggable instead of only
 publishing one aggregate score.
 
+## Phase 6 reranking architecture
+
+The cross-encoder is an adapter behind the existing `PlayerReranker` port. A small
+`PairScoringModel` boundary keeps Sentence Transformers replaceable and allows deterministic CI
+tests without downloading a model.
+
+```mermaid
+flowchart LR
+    QP[(QueryProfile)] --> F[Fused broad pool]
+    F --> B[Baseline fused order]
+    F --> P[Query/profile pairs]
+    P --> CE[Multilingual CrossEncoder]
+    CE --> R[RankedPlayerCandidate]
+    B --> E[Before/after evaluator]
+    R --> E
+    E --> M[MRR, nDCG, Hit Rate]
+    E --> L[Warm per-query latency]
+    R -. relevance only .-> G[Future RecommendationGovernor]
+```
+
+The evaluator retrieves each query once, so baseline and cross-encoder receive identical
+candidates. The Torch and ONNX backends implement the same scoring boundary. An explicit ONNX
+filename avoids ambiguous artifact selection when a model repository publishes optimized and
+quantized variants alongside FP32.
+
+The pretrained MS MARCO cross-encoder currently remains opt-in because it reduced the small
+football Golden Dataset's ranking quality. This activation policy is separate from the component
+being technically available and tested.
+
 ## Component ports
 
 The `PipelineComponents` dependency graph exposes six independent roles:

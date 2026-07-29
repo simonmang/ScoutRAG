@@ -32,6 +32,7 @@ retrieval change.
 | Recall@K | final ranking | share of judged relevant players returned by K |
 | MRR | final ranking | reciprocal rank of the first relevant result |
 | nDCG@K | final ranking | graded ranking quality relative to the ideal order |
+| Hit Rate@K | final ranking | share of queries with at least one relevant result by K |
 
 Queries are macro-averaged, so a query with three judgments cannot dominate an exact lookup with
 one judgment.
@@ -55,3 +56,32 @@ a regression baseline, not as a claim of production accuracy:
 - opponent profiles have partial source coverage
 - some relevant groups contain only Leverkusen players because they are the only source-covered
   season profiles
+
+## Phase 6 reranking evaluation
+
+`scoutrag-rerank-evaluate` performs broad hybrid retrieval once per query and gives the exact same
+fused candidate list to the baseline and cross-encoder orderings. Candidate Recall therefore
+cannot change during this comparison.
+
+```powershell
+scoutrag-rerank-evaluate --local-files-only
+scoutrag-rerank-evaluate --backend onnx --onnx-file-name onnx/model.onnx
+```
+
+The command writes full per-query reports to the ignored `evaluation/results/` directory. The
+reviewed aggregate is committed as `reranking_summary.json`.
+
+| Ranking | MRR | HR@1 | HR@5 | nDCG@5 |
+| --- | ---: | ---: | ---: | ---: |
+| Fused baseline | 1.000 | 1.000 | 1.000 | 0.900637 |
+| Multilingual cross-encoder | 0.900 | 0.800 | 1.000 | 0.846097 |
+| Delta | -0.100 | -0.200 | 0.000 | -0.054540 |
+
+The cross-encoder is intentionally opt-in because this pretrained, non-football model makes the
+seed ranking worse. This is evidence of domain shift, not a reason to hide the result. A later
+football-specific reranker can reuse the same report contract and must beat the fused baseline
+before becoming the default.
+
+Warm local CPU mean latency was 824.084 ms with Torch and 310.008 ms with the model's FP32 ONNX
+artifact. These values exclude loading and warm-up and should not be generalized to other
+hardware.

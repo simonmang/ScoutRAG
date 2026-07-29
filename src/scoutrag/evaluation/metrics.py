@@ -44,6 +44,7 @@ def evaluate_ranking(
             precision=_rounded(retrieved_relevant / k),
             recall=_rounded(retrieved_relevant / len(relevant_ids)),
             ndcg=_rounded(dcg / ideal_dcg if ideal_dcg else 0),
+            hit_rate=float(retrieved_relevant > 0),
         )
 
     return RetrievalMetrics(
@@ -71,6 +72,7 @@ def mean_metrics(
                 precision=_rounded(sum(item.at_k[k].precision for item in metrics) / len(metrics)),
                 recall=_rounded(sum(item.at_k[k].recall for item in metrics) / len(metrics)),
                 ndcg=_rounded(sum(item.at_k[k].ndcg for item in metrics) / len(metrics)),
+                hit_rate=_rounded(sum(item.at_k[k].hit_rate for item in metrics) / len(metrics)),
             )
             for k in k_values
         },

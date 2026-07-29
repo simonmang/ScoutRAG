@@ -10,10 +10,10 @@ evidence governance. Its primary output is not free-form text: it is an auditabl
 `RecommendationEvidencePack` that can be inspected, evaluated, and optionally rendered by an
 LLM.
 
-> Project status: **Phase 5 — evaluated retrieval baseline**. A versioned ten-query Golden Dataset
-> now measures candidate recall and final ranking separately. Reproducible ablations compare BM25,
-> the pretrained multilingual bi-encoder, structured features, and the complete Phase 4 hybrid.
-> Cross-encoder reranking, governance implementation, and LLM generation remain separate phases.
+> Project status: **Phase 6 — evaluated cross-encoder reranking**. A multilingual CrossEncoder now
+> reranks the shared broad candidate pool behind the `PlayerReranker` port. Before/after MRR,
+> nDCG, Hit Rate, and warm latency are measured with Torch and ONNX. Governance implementation and
+> LLM generation remain separate phases.
 
 ## Why this is not a classic document RAG
 
@@ -52,7 +52,7 @@ flowchart TD
     DR --> F
 
     F --> CP[Broad candidate pool<br/>30–50 candidates]
-    CP --> RR[PlayerReranker<br/>NoOp, later Cross-Encoder]
+    CP --> RR[PlayerReranker<br/>NoOp or Cross-Encoder]
     RR --> G[RecommendationGovernor]
     G --> EP[RecommendationEvidencePack]
     FE --> ER
@@ -67,8 +67,8 @@ flowchart TD
 
     classDef implemented fill:#dcfce7,stroke:#15803d,color:#052e16;
     classDef later fill:#f3f4f6,stroke:#6b7280,color:#111827;
-    class SB,DN,PS,ME,FE,QA,QP,ER,SR,SP,DR,F,CP implemented;
-    class RR,G,EP,API,AG,AA later;
+    class SB,DN,PS,ME,FE,QA,QP,ER,SR,SP,DR,F,CP,RR implemented;
+    class G,EP,API,AG,AA later;
 ```
 
 The component boundaries are explicit and every recall strategy is independently testable. See
@@ -128,14 +128,64 @@ Implemented:
 - dependency-free Candidate Recall, Precision@K, Recall@K, MRR, and graded nDCG@K
 - reproducible A-D retrieval ablations plus the complete Phase 4 hybrid
 - auditable per-query results, macro averages, and `scoutrag-evaluate` CLI
+- injectable pair-scoring boundary and multilingual `CrossEncoderPlayerReranker`
+- isolated fused-order versus reranked-order evaluation over identical broad candidate pools
+- Hit Rate@K, MRR/nDCG deltas, and per-query warm reranking latency
+- tested Torch and explicit ONNX CPU inference with `scoutrag-rerank-evaluate`
 
 Deliberately not implemented yet:
 
 - football-specific bi-encoder fine-tuning
-- cross-encoder reranking
+- football-specific cross-encoder fine-tuning
 - rule-based governance implementation
 - `/api/v1/retrieve`, `/api/v1/answer`, or `/api/v1/search`
 - dashboard and LLM generation
+
+## Phase 6 cross-encoder reranking
+
+The default reranker model is
+[`cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`](https://huggingface.co/cross-encoder/mmarco-mMiniLMv2-L12-H384-v1).
+It jointly scores each German/English query and deterministic player profile. Its raw score is
+used only for relative ordering; it is not confidence, evidence quality, or a calibrated
+probability.
+
+Reproduce the Torch comparison:
+
+```powershell
+scoutrag-rerank-evaluate
+```
+
+Test the explicit ONNX artifact:
+
+```powershell
+python -m pip install -e ".[onnx]"
+scoutrag-rerank-evaluate --backend onnx --onnx-file-name onnx/model.onnx
+```
+
+Validated local result over the same 10 queries, 21 judgments, and broad pools:
+
+| Ranking | Candidate Recall | MRR | Hit Rate@1 | Hit Rate@5 | nDCG@5 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Hybrid fused order | 1.000 | 1.000 | 1.000 | 1.000 | **0.900637** |
+| + pretrained cross-encoder | 1.000 | 0.900 | 0.800 | 1.000 | 0.846097 |
+| Delta | 0.000 | -0.100 | -0.200 | 0.000 | -0.054540 |
+
+This negative result is retained deliberately: an off-the-shelf web-search reranker does not
+automatically transfer to football scouting. It stays opt-in through `scoutrag-retrieve --rerank`
+until domain-specific training or a stronger independently labeled evaluation demonstrates an
+improvement. Exact lookup, Bayern team filtering, and broad recall are unaffected.
+
+Warm local CPU timing:
+
+| Backend | Mean | p50 | p95 |
+| --- | ---: | ---: | ---: |
+| Torch | 824.084 ms | 459.121 ms | 2623.870 ms |
+| ONNX FP32 | 310.008 ms | 300.721 ms | 563.911 ms |
+
+ONNX reduced mean reranking time by 62.4% in this single-machine run while producing the same
+ranking metrics. Model download, loading, export, and one-pair warm-up are excluded. See the
+[machine-readable Phase 6 summary](evaluation/reranking_summary.json) and
+[evaluation methodology](evaluation/README.md).
 
 ## Phase 5 retrieval evaluation
 
@@ -339,6 +389,7 @@ src/scoutrag/
 ├── domain/         # typed, framework-independent football and evidence models
 ├── ports/          # interfaces for every replaceable pipeline role
 ├── retrieval/      # query analysis, four retrievers, fusion, trace, and CLI
+├── reranking/      # cross-encoder model adapter and PlayerReranker
 ├── evaluation/     # golden data, IR metrics, ablations, reports, and CLI
 ├── config.py
 ├── logging.py
@@ -361,7 +412,7 @@ docs/
 3. ✅ Per-90 features, refined position groups, percentiles, profile text, and metric definitions
 4. ✅ Exact, structured, BM25, and multilingual bi-encoder retrieval with normalized fusion
 5. ✅ Golden retrieval dataset, candidate metrics, and ablation studies
-6. Cross-encoder reranking and optional ONNX inference
+6. ✅ Cross-encoder reranking, before/after evaluation, and tested ONNX inference
 7. Rule-based evidence governance with false-recommendation evaluation
 8. Retrieve/answer/search APIs and explainability dashboard
 9. Football bi-encoder fine-tuning with hard negatives

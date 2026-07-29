@@ -57,6 +57,7 @@ class KMetrics(ScoutRAGModel):
     precision: float = Field(ge=0, le=1)
     recall: float = Field(ge=0, le=1)
     ndcg: float = Field(ge=0, le=1)
+    hit_rate: float = Field(ge=0, le=1)
 
 
 class RetrievalMetrics(ScoutRAGModel):
@@ -75,6 +76,7 @@ class QueryEvaluation(ScoutRAGModel):
     relevant_player_ids: list[str] = Field(default_factory=list)
     broad_candidate_ids: list[str] = Field(default_factory=list)
     ranked_player_ids: list[str] = Field(default_factory=list)
+    reranking_ms: float = Field(default=0, ge=0)
     metrics: RetrievalMetrics
 
 
@@ -94,3 +96,33 @@ class AblationReport(ScoutRAGModel):
 
     dataset_version: str = Field(min_length=1)
     reports: list[EvaluationReport] = Field(min_length=1)
+
+
+class LatencyStats(ScoutRAGModel):
+    """Summary of warm reranking latency across golden queries."""
+
+    mean_ms: float = Field(ge=0)
+    p50_ms: float = Field(ge=0)
+    p95_ms: float = Field(ge=0)
+    minimum_ms: float = Field(ge=0)
+    maximum_ms: float = Field(ge=0)
+
+
+class RerankingDelta(ScoutRAGModel):
+    """Signed changes from fused order to cross-encoder order."""
+
+    mean_reciprocal_rank: float
+    ndcg_at_k: dict[int, float]
+    hit_rate_at_k: dict[int, float]
+
+
+class RerankingComparisonReport(ScoutRAGModel):
+    """Before/after evaluation over the exact same broad candidate pools."""
+
+    dataset_version: str = Field(min_length=1)
+    model_name: str = Field(min_length=1)
+    backend: str = Field(min_length=1)
+    baseline: EvaluationReport
+    reranked: EvaluationReport
+    delta: RerankingDelta
+    latency: LatencyStats

@@ -55,6 +55,7 @@ class RetrievalEvaluator:
                     relevant_player_ids=list(relevance),
                     broad_candidate_ids=broad_ids,
                     ranked_player_ids=ranked_ids,
+                    reranking_ms=result.retrieval_trace.stage_timings_ms.get("reranking", 0),
                     metrics=metrics,
                 )
             )

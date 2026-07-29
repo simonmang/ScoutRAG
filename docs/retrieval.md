@@ -78,8 +78,9 @@ preserving broad recall.
 ## Broad recall and trace
 
 The default candidate pool is 40 profiles before reranking, even when the requested result count
-is 10. The current `NoOpPlayerReranker` preserves fused order and makes the Phase 6 replacement
-boundary explicit.
+is 10. `NoOpPlayerReranker` preserves the fused baseline. `CrossEncoderPlayerReranker` can instead
+jointly score every query/profile pair and reorder that same pool. It never performs recall or
+evidence governance.
 
 Every run records:
 
@@ -98,6 +99,7 @@ Every run records:
 python -m pip install -e ".[dev,retrieval]"
 scoutrag-data build --competition-id 9 --season-id 281
 scoutrag-retrieve "pressingstarker Sechser von Bayern München mit mindestens 100 Minuten"
+scoutrag-retrieve "pressingstarker Sechser von Bayern München" --rerank
 ```
 
 The first command using dense retrieval downloads the model. The first search builds the local

@@ -1,0 +1,51 @@
+{
+  "schema_version": "phase6-reranking-v1",
+  "dataset_version": "phase5-golden-v1",
+  "profile_count": 373,
+  "query_count": 10,
+  "candidate_pool_size": 40,
+  "cross_encoder_model": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+  "metrics": {
+    "hybrid_fused_order": {
+      "candidate_recall": 1.0,
+      "mean_reciprocal_rank": 1.0,
+      "hit_rate_at_1": 1.0,
+      "hit_rate_at_5": 1.0,
+      "ndcg_at_5": 0.900637
+    },
+    "hybrid_plus_cross_encoder": {
+      "candidate_recall": 1.0,
+      "mean_reciprocal_rank": 0.9,
+      "hit_rate_at_1": 0.8,
+      "hit_rate_at_5": 1.0,
+      "ndcg_at_5": 0.846097
+    },
+    "delta": {
+      "mean_reciprocal_rank": -0.1,
+      "hit_rate_at_1": -0.2,
+      "hit_rate_at_5": 0.0,
+      "ndcg_at_5": -0.05454
+    }
+  },
+  "warm_cpu_latency": {
+    "torch": {
+      "mean_ms": 824.084,
+      "p50_ms": 459.121,
+      "p95_ms": 2623.87
+    },
+    "onnx_fp32": {
+      "file_name": "onnx/model.onnx",
+      "mean_ms": 310.008,
+      "p50_ms": 300.721,
+      "p95_ms": 563.911
+    },
+    "onnx_mean_reduction_percent": 62.4
+  },
+  "activation_policy": "opt_in_until_domain_evaluation_improves",
+  "limitations": [
+    "The general MS MARCO reranker is not football-specific and reduced ranking quality on this seed.",
+    "Only ten golden queries are available, so latency and relevance estimates have high variance.",
+    "Warm latency excludes model download, export, loading, and one-pair warm-up.",
+    "This summary is a local CPU measurement, not a hardware-independent benchmark."
+  ]
+}

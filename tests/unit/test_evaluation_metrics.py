@@ -24,6 +24,7 @@ def test_ranking_metrics_separate_broad_recall_from_final_order() -> None:
     assert metrics.at_k[1].precision == 1
     assert metrics.at_k[1].recall == pytest.approx(1 / 3, abs=1e-6)
     assert metrics.at_k[1].ndcg == 1
+    assert metrics.at_k[1].hit_rate == 1
     assert metrics.at_k[3].precision == pytest.approx(2 / 3, abs=1e-6)
     assert metrics.at_k[3].recall == pytest.approx(2 / 3, abs=1e-6)
     assert metrics.at_k[3].ndcg == pytest.approx(
@@ -57,6 +58,7 @@ def test_macro_average_weights_queries_equally() -> None:
     assert aggregate.at_k[1].precision == 0.5
     assert aggregate.at_k[1].recall == 0.5
     assert aggregate.at_k[1].ndcg == 0.5
+    assert aggregate.at_k[1].hit_rate == 0.5
 
 
 def test_metrics_reject_empty_judgments_and_invalid_cutoffs() -> None:

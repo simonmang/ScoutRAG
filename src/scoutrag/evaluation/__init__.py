@@ -9,9 +9,13 @@ from scoutrag.evaluation.models import (
     GoldenJudgment,
     GoldenQuery,
     KMetrics,
+    LatencyStats,
     QueryEvaluation,
+    RerankingComparisonReport,
+    RerankingDelta,
     RetrievalMetrics,
 )
+from scoutrag.evaluation.reranking import RerankingEvaluator
 from scoutrag.evaluation.runner import AblationRunner, RetrievalEvaluator
 
 __all__ = [
@@ -22,7 +26,11 @@ __all__ = [
     "GoldenJudgment",
     "GoldenQuery",
     "KMetrics",
+    "LatencyStats",
     "QueryEvaluation",
+    "RerankingComparisonReport",
+    "RerankingDelta",
+    "RerankingEvaluator",
     "RetrievalEvaluator",
     "RetrievalMetrics",
     "evaluate_ranking",
