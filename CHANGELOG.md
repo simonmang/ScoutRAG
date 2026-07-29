@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+- replaced the optional public Render path with a Windows one-click local dashboard launcher
+- added prerequisite checks, configurable local port, and an opt-in dense retrieval switch
+- kept Docker solely as a reproducible local and CI execution environment
+
 ## 1.0.0
 
 ScoutRAG's first portfolio-ready release.

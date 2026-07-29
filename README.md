@@ -27,8 +27,8 @@ The launcher opens `http://127.0.0.1:8000` and keeps all traffic on the local ma
 equivalent portable Docker workflow is:
 
 ```powershell
-docker build --tag scoutrag:1.0.0 .
-docker run --rm --publish 8000:8000 scoutrag:1.0.0
+docker build --tag scoutrag:1.0.1 .
+docker run --rm --publish 8000:8000 scoutrag:1.0.1
 ```
 
 The demo keeps exact, structured, and BM25 retrieval, fusion, governance, traces, safe answers,

@@ -52,8 +52,8 @@ cache. The standard local demo deliberately avoids that dependency.
 Build and run the same model-free image used by the deployment blueprint:
 
 ```powershell
-docker build --tag scoutrag:1.0.0 .
-docker run --rm --publish 8000:8000 scoutrag:1.0.0
+docker build --tag scoutrag:1.0.1 .
+docker run --rm --publish 8000:8000 scoutrag:1.0.1
 ```
 
 Open `http://127.0.0.1:8000`. The image runs as an unprivileged user and defaults to:
