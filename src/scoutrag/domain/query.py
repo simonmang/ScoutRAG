@@ -28,6 +28,7 @@ class QueryProfile(ScoutRAGModel):
     requested_traits: list[str] = Field(default_factory=list)
     requested_metrics: list[str] = Field(default_factory=list)
     named_players: list[str] = Field(default_factory=list)
+    team_filters: list[str] = Field(default_factory=list)
     competition_filters: list[str] = Field(default_factory=list)
     season_filters: list[str] = Field(default_factory=list)
     minimum_minutes: int | None = Field(default=None, ge=0)

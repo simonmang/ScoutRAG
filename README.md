@@ -10,10 +10,10 @@ evidence governance. Its primary output is not free-form text: it is an auditabl
 `RecommendationEvidencePack` that can be inspected, evaluated, and optionally rendered by an
 LLM.
 
-> Project status: **Phase 3 — position-aware feature engineering**. The reference build converts
-> 34 Bundesliga matches into normalized events, player minutes, per-90 features, position-group
-> percentiles, documented metrics, deterministic profile text, and auditable evidence. No
-> embedding, cross-encoder, or LLM model is downloaded.
+> Project status: **Phase 4 — hybrid retrieval MVP**. Exact, structured, BM25, and multilingual
+> dense retrieval independently create a broad candidate pool. Min-max-normalized strategy scores
+> are fused with configurable weights and every candidate retains its retrieval provenance.
+> Cross-encoder reranking, governance implementation, and LLM generation remain separate phases.
 
 ## Why this is not a classic document RAG
 
@@ -67,13 +67,14 @@ flowchart TD
 
     classDef implemented fill:#dcfce7,stroke:#15803d,color:#052e16;
     classDef later fill:#f3f4f6,stroke:#6b7280,color:#111827;
-    class SB,DN,PS,ME,FE,QA,QP,G,EP implemented;
-    class ER,SR,SP,DR,F,CP,RR,API,AG,AA later;
+    class SB,DN,PS,ME,FE,QA,QP,ER,SR,SP,DR,F,CP implemented;
+    class RR,G,EP,API,AG,AA later;
 ```
 
-The component boundaries are already defined; model-backed implementations arrive in later
-phases. See [the detailed architecture](docs/architecture.md) for responsibilities, invariants,
-and request flows.
+The component boundaries are explicit and every recall strategy is independently testable. See
+[the detailed architecture](docs/architecture.md) and
+[the retrieval design](docs/retrieval.md) for responsibilities, score semantics, and request
+flows.
 
 ### Separation of responsibilities
 
@@ -116,14 +117,66 @@ Implemented:
 - cross-record validation for coverage, duplicates, season integrity, and minutes
 - Zstandard-compressed Parquet artifacts and a SHA-256 reproducibility manifest
 - `scoutrag-data` command-line interface
+- German/English rule-based query analysis with intent, team, position, metric, season, and
+  minimum-minute filters
+- independent exact, structured-feature, dependency-free BM25, and dense bi-encoder retrievers
+- multilingual `paraphrase-multilingual-MiniLM-L12-v2` baseline with a persisted local index
+- min-max score normalization and configurable weighted retrieval fusion
+- broad candidate-pool orchestration, per-strategy provenance, hard filters, and stage timings
+- `scoutrag-retrieve` command-line interface
 
 Deliberately not implemented yet:
 
-- exact, structured, sparse, or dense retrieval
-- embedding or cross-encoder model downloads
+- football-specific bi-encoder fine-tuning
+- cross-encoder reranking
 - rule-based governance implementation
 - `/api/v1/retrieve`, `/api/v1/answer`, or `/api/v1/search`
 - dashboard and LLM generation
+
+## Phase 4 hybrid retrieval
+
+Install the optional model stack and run a search:
+
+```powershell
+python -m pip install -e ".[dev,retrieval]"
+scoutrag-retrieve "pressingstarker Sechser von Bayern München mit mindestens 100 Minuten"
+```
+
+The first dense run downloads the configured model and creates
+`data/processed/bundesliga-2023-2024/dense_index.json`. Generated embeddings remain ignored by
+Git. Later process starts reuse this profile index; `--rebuild-dense-index` explicitly refreshes
+it. A model-free baseline remains available:
+
+```powershell
+scoutrag-retrieve "Zeige das Profil von Joshua Kimmich" --disable-dense
+```
+
+Default fusion:
+
+```text
+fused_score =
+0.30 × normalized_dense
++ 0.25 × normalized_BM25
++ 0.30 × normalized_structured
++ 0.15 × normalized_exact
+```
+
+Missing strategy signals contribute zero, so agreement across independent strategies is rewarded.
+The fused score is a relevance signal—not confidence, evidence quality, or a probability.
+
+Local real-data smoke test:
+
+| Measure | Result |
+| --- | ---: |
+| Indexed profiles | 373 |
+| Embedding dimensions | 384 |
+| Bayern-filtered test result | Leon Goretzka |
+| Strategies agreeing on result | exact, structured, BM25, dense |
+| Warm dense query stage | about 69 ms |
+| Cold model load + dense query | about 108 s on local CPU |
+
+The cold-start measurement includes loading the roughly 480 MB model. It is intentionally kept
+separate from warm request latency.
 
 ## Phase 3 data pipeline
 
@@ -228,7 +281,7 @@ Requirements: Python 3.11 or newer.
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows PowerShell: .venv\Scripts\Activate.ps1
-python -m pip install -e ".[dev]"
+python -m pip install -e ".[dev,retrieval]"
 pytest
 ruff check .
 ruff format --check .
@@ -258,6 +311,7 @@ src/scoutrag/
 ├── data/           # download, normalization, minutes, validation, and Parquet
 ├── domain/         # typed, framework-independent football and evidence models
 ├── ports/          # interfaces for every replaceable pipeline role
+├── retrieval/      # query analysis, four retrievers, fusion, trace, and CLI
 ├── config.py
 ├── logging.py
 └── main.py
@@ -277,7 +331,7 @@ docs/
 1. ✅ Architecture foundation and typed evidence contracts
 2. ✅ Data pipeline and validated season-specific StatsBomb evidence
 3. ✅ Per-90 features, refined position groups, percentiles, profile text, and metric definitions
-4. Exact, structured, BM25, and multilingual bi-encoder retrieval with normalized fusion
+4. ✅ Exact, structured, BM25, and multilingual bi-encoder retrieval with normalized fusion
 5. Golden retrieval dataset, candidate metrics, and ablation studies
 6. Cross-encoder reranking and optional ONNX inference
 7. Rule-based evidence governance with false-recommendation evaluation

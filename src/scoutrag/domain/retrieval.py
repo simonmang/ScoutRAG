@@ -6,6 +6,7 @@ from pydantic import Field, field_validator, model_validator
 
 from scoutrag.domain.base import ScoutRAGModel
 from scoutrag.domain.player import PlayerSeasonProfile
+from scoutrag.domain.query import QueryProfile
 
 
 class CandidateRetrievalTrace(ScoutRAGModel):
@@ -66,3 +67,18 @@ class RetrievalTrace(ScoutRAGModel):
         if any(value < 0 for value in values.values()):
             raise ValueError("stage timings cannot be negative")
         return values
+
+
+class HybridRetrievalResult(ScoutRAGModel):
+    """LLM-free Phase 4 result before evidence governance is implemented."""
+
+    query_profile: QueryProfile
+    candidates: list[RankedPlayerCandidate] = Field(default_factory=list)
+    retrieval_trace: RetrievalTrace
+
+    @model_validator(mode="after")
+    def validate_candidate_ranks(self) -> "HybridRetrievalResult":
+        ranks = [candidate.rank for candidate in self.candidates]
+        if ranks != list(range(1, len(ranks) + 1)):
+            raise ValueError("candidates must have contiguous ranks starting at one")
+        return self

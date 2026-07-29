@@ -161,7 +161,35 @@ sequenceDiagram
     end
 ```
 
-## Phase 1 ports
+## Phase 4 retrieval architecture
+
+The rule-based analyzer creates a `QueryProfile` before any search starts. Exact, structured,
+BM25, and dense retrievers run independently against the same hard filters. Each returns a raw
+strategy score and source trace. `WeightedRetrievalFusion` normalizes each score distribution
+separately before applying configurable weights.
+
+```mermaid
+flowchart LR
+    Q[German or English query] --> A[RuleBasedQueryAnalyzer]
+    A --> P[(QueryProfile)]
+    P --> H[Hard filters]
+    H --> E[Exact]
+    H --> S[Structured features]
+    H --> B[BM25]
+    H --> D[Multilingual bi-encoder]
+    E & S & B & D --> N[Per-strategy min-max normalization]
+    N --> W[Weighted fusion]
+    W --> C[(Broad candidate pool)]
+    C --> R[NoOpPlayerReranker]
+    R --> T[(Ranked candidates + RetrievalTrace)]
+```
+
+The dense profile index is season-safe: its keys contain player ID, competition, and season. It
+also stores the exact embedding model identifier and is rejected when profiles or model differ.
+Index construction latency is outside request tracing when the pipeline is kept alive; a cold CLI
+start necessarily includes lazy model loading in the first dense stage.
+
+## Component ports
 
 The `PipelineComponents` dependency graph exposes six independent roles:
 
@@ -172,9 +200,9 @@ The `PipelineComponents` dependency graph exposes six independent roles:
 5. `RecommendationGovernor` assesses evidence sufficiency.
 6. `AnswerGenerator`, when configured, renders only the completed evidence pack.
 
-`CandidateRetriever` is a semantic alias of `PlayerRetriever` in the recall stage. A later
-composition root can inject exact, structured, sparse, and dense adapters without changing domain
-or API contracts.
+`CandidateRetriever` is a semantic alias of `PlayerRetriever` in the recall stage. Exact,
+structured, sparse, and dense adapters implement the same port without changing domain or API
+contracts.
 
 ## Invariants
 
@@ -213,7 +241,7 @@ The future `AnswerGenerator` receives only a `RecommendationEvidencePack`. Expec
 Generation cannot calculate new statistics, add candidates, fill missing values, invent seasons,
 or create unsupported tactical claims.
 
-## Deployment boundary in Phase 1
+## Deployment boundary in Phase 4
 
 Only `GET /health` is exposed. Retrieval endpoints are intentionally deferred until their
 underlying pipeline stages exist:

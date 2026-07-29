@@ -16,6 +16,7 @@ from scoutrag.domain.player import (
 from scoutrag.domain.query import QueryIntent, QueryProfile
 from scoutrag.domain.retrieval import (
     CandidateRetrievalTrace,
+    HybridRetrievalResult,
     PlayerCandidate,
     RankedPlayerCandidate,
     RetrievalTrace,
@@ -25,6 +26,7 @@ __all__ = [
     "CandidateRetrievalTrace",
     "EvidenceVerdict",
     "GeneratedAnswer",
+    "HybridRetrievalResult",
     "MatchEvidence",
     "MetricDefinition",
     "PlayerCandidate",

@@ -24,3 +24,11 @@ reference only because of the available upstream test data.
 
 StatsBomb must be credited when publishing analysis based on their open data. See the
 [StatsBomb Open Data repository](https://github.com/statsbomb/open-data) for its current terms.
+
+Phase 4 creates an additional ignored `processed/bundesliga-2023-2024/dense_index.json` artifact.
+It contains the selected model name, season-safe profile keys, and document embeddings. Rebuild it
+after changing the player profiles or embedding model:
+
+```powershell
+scoutrag-retrieve "Zeige das Profil von Joshua Kimmich" --rebuild-dense-index
+```
