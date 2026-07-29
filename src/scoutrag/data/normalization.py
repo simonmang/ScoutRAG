@@ -48,6 +48,8 @@ def normalize_event(
     payload = _event_payload(raw_event, event_type)
     location = raw_event.get("location")
     location_values = location if isinstance(location, list) else []
+    end_location = payload.get("end_location")
+    end_location_values = end_location if isinstance(end_location, list) else []
     minute = float(raw_event.get("minute", 0))
     second = float(raw_event.get("second", 0))
 
@@ -78,10 +80,25 @@ def normalize_event(
             if len(location_values) >= 2 and location_values[1] is not None
             else None
         ),
+        end_location_x=(
+            float(end_location_values[0])
+            if len(end_location_values) >= 1 and end_location_values[0] is not None
+            else None
+        ),
+        end_location_y=(
+            float(end_location_values[1])
+            if len(end_location_values) >= 2 and end_location_values[1] is not None
+            else None
+        ),
+        expected_goals=(
+            float(payload["statsbomb_xg"]) if payload.get("statsbomb_xg") is not None else None
+        ),
+        pass_length=(float(payload["length"]) if payload.get("length") is not None else None),
         duration_seconds=(
             float(raw_event["duration"]) if raw_event.get("duration") is not None else None
         ),
         under_pressure=bool(raw_event.get("under_pressure", False)),
+        counterpress=bool(raw_event.get("counterpress", False)),
         source_reference=f"statsbomb:matches/{match_id}/events/{event_id}",
     )
 

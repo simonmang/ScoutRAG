@@ -1,11 +1,12 @@
-"""Command-line entry point for reproducible Phase 2 builds."""
+"""Command-line entry point for reproducible Phase 3 builds."""
 
 import argparse
 from collections.abc import Sequence
 from pathlib import Path
 
+from scoutrag.data.feature_engineering import FeatureEngineeringConfig
 from scoutrag.data.models import DownloadSummary, PipelineResult
-from scoutrag.data.pipeline import Phase2DataPipeline
+from scoutrag.data.pipeline import Phase3DataPipeline
 from scoutrag.data.statsbomb import StatsBombOpenDataDownloader
 
 DEFAULT_COMPETITION_ID = 9
@@ -49,6 +50,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_PROCESSED_ROOT,
     )
+    build_parser_command.add_argument("--minimum-minutes", type=float, default=450)
+    build_parser_command.add_argument("--full-sample-minutes", type=float, default=900)
+    build_parser_command.add_argument(
+        "--minimum-comparison-group-size",
+        type=int,
+        default=3,
+    )
+    build_parser_command.add_argument(
+        "--minimum-source-coverage",
+        type=float,
+        default=0.8,
+    )
     return parser
 
 
@@ -63,7 +76,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             match_limit=args.match_limit,
         )
     else:
-        result = Phase2DataPipeline().run(
+        result = Phase3DataPipeline(
+            feature_config=FeatureEngineeringConfig(
+                minimum_minutes=args.minimum_minutes,
+                full_sample_minutes=args.full_sample_minutes,
+                minimum_comparison_group_size=args.minimum_comparison_group_size,
+                minimum_source_coverage=args.minimum_source_coverage,
+            )
+        ).run(
             args.input,
             args.output,
             competition_id=args.competition_id,

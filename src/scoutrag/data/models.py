@@ -1,4 +1,4 @@
-"""Typed intermediate records used by the Phase 2 data pipeline."""
+"""Typed intermediate records used by the data and feature pipeline."""
 
 from datetime import date
 
@@ -58,8 +58,13 @@ class NormalizedEvent(ScoutRAGModel):
     position_name: str | None = None
     location_x: float | None = None
     location_y: float | None = None
+    end_location_x: float | None = None
+    end_location_y: float | None = None
+    expected_goals: float | None = Field(default=None, ge=0)
+    pass_length: float | None = Field(default=None, ge=0)
     duration_seconds: float | None = Field(default=None, ge=0)
     under_pressure: bool = False
+    counterpress: bool = False
     source_reference: str = Field(min_length=1)
 
 
@@ -91,6 +96,9 @@ class DataValidationReport(ScoutRAGModel):
     participation_count: int = Field(ge=0)
     profile_count: int = Field(ge=0)
     evidence_count: int = Field(ge=0)
+    metric_definition_count: int = Field(default=0, ge=0)
+    percentile_profile_count: int = Field(default=0, ge=0)
+    feature_version: str = "phase3-v1"
     errors: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
 
@@ -106,7 +114,7 @@ class DownloadSummary(ScoutRAGModel):
 
 
 class PipelineResult(ScoutRAGModel):
-    """Serializable summary returned by the complete Phase 2 build."""
+    """Serializable summary returned by the complete data build."""
 
     competition: CompetitionSeason
     validation: DataValidationReport

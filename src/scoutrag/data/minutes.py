@@ -19,15 +19,25 @@ def parse_elapsed_seconds(value: str) -> float:
 
 
 def position_group(position_name: str) -> str:
-    """Map a detailed StatsBomb position to a stable broad Phase 2 group."""
+    """Map a detailed StatsBomb position to a scouting-oriented comparison group."""
     normalized = position_name.casefold()
     if "goalkeeper" in normalized:
         return "goalkeeper"
-    if "back" in normalized:
-        return "defender"
-    if "midfield" in normalized:
-        return "midfield"
-    if "forward" in normalized or "striker" in normalized or "wing" in normalized:
+    if "center back" in normalized:
+        return "center_back"
+    if "wing back" in normalized or "full back" in normalized:
+        return "fullback_wingback"
+    if normalized.endswith(" back"):
+        return "fullback_wingback"
+    if "defensive midfield" in normalized:
+        return "defensive_midfield"
+    if "attacking midfield" in normalized:
+        return "attacking_midfield"
+    if "center midfield" in normalized:
+        return "central_midfield"
+    if "wing" in normalized:
+        return "winger"
+    if "forward" in normalized or "striker" in normalized:
         return "forward"
     return "other"
 

@@ -1,8 +1,9 @@
-"""Orchestrate the complete, LLM-free Phase 2 data build."""
+"""Orchestrate the complete, LLM-free Phase 3 data build."""
 
 from pathlib import Path
 
 from scoutrag.data.aggregation import aggregate_player_seasons
+from scoutrag.data.feature_engineering import FeatureEngineeringConfig, engineer_player_features
 from scoutrag.data.minutes import calculate_match_participations
 from scoutrag.data.models import MatchRecord, NormalizedEvent, PipelineResult
 from scoutrag.data.normalization import normalize_events, normalize_match
@@ -11,11 +12,16 @@ from scoutrag.data.storage import ParquetDatasetWriter
 from scoutrag.data.validation import validate_dataset
 
 
-class Phase2DataPipeline:
-    """Build one exact competition-season into auditable Parquet artifacts."""
+class Phase3DataPipeline:
+    """Build one competition-season into comparable, auditable feature artifacts."""
 
-    def __init__(self, writer: ParquetDatasetWriter | None = None) -> None:
+    def __init__(
+        self,
+        writer: ParquetDatasetWriter | None = None,
+        feature_config: FeatureEngineeringConfig | None = None,
+    ) -> None:
         self.writer = writer or ParquetDatasetWriter()
+        self.feature_config = feature_config or FeatureEngineeringConfig()
 
     def run(
         self,
@@ -55,13 +61,21 @@ class Phase2DataPipeline:
             events,
             participations,
         )
+        engineered = engineer_player_features(
+            competition,
+            matches,
+            aggregation.profiles,
+            aggregation.evidence,
+            config=self.feature_config,
+        )
         validation = validate_dataset(
             competition,
             matches,
             events,
             participations,
-            aggregation.profiles,
-            aggregation.evidence,
+            engineered.profiles,
+            engineered.evidence,
+            engineered.definitions,
         )
         output_files = self.writer.write(
             output_root,
@@ -69,8 +83,9 @@ class Phase2DataPipeline:
             matches=matches,
             events=events,
             participations=participations,
-            profiles=aggregation.profiles,
-            evidence=aggregation.evidence,
+            profiles=engineered.profiles,
+            evidence=engineered.evidence,
+            definitions=engineered.definitions,
             validation=validation,
         )
         return PipelineResult(
@@ -78,3 +93,7 @@ class Phase2DataPipeline:
             validation=validation,
             output_files=[str(path.resolve()) for path in output_files],
         )
+
+
+# Kept as a source-compatible alias for callers created during Phase 2.
+Phase2DataPipeline = Phase3DataPipeline

@@ -52,7 +52,7 @@ flowchart LR
     end
 ```
 
-## Phase 2 data architecture
+## Phase 3 data architecture
 
 ```mermaid
 flowchart TD
@@ -68,22 +68,48 @@ flowchart TD
     R --> MIN[Lineup interval minute calculation]
     N --> AGG[Season aggregation]
     MIN --> AGG
-    AGG --> PSP[(PlayerSeasonProfile)]
-    AGG --> PME[(PlayerMetricEvidence)]
+    AGG --> FE[Per-90 and rate features]
+    DEF[Metric definitions] --> FE
+    FE --> POS[Position-group percentiles]
+    POS --> DQ[Data Quality Score]
+    DQ --> PSP[(PlayerSeasonProfile)]
+    DQ --> PME[(PlayerMetricEvidence)]
     PSP & PME --> VAL[Cross-record validation]
     VAL --> PAR[Zstd Parquet artifacts]
     VAL --> REP[Validation report]
     PAR & REP --> MAN[SHA-256 manifest]
 ```
 
-Phase 2 processes one explicit competition-season per pipeline execution. Raw counts are
-deliberately not converted to per-90 values or percentiles yet; those transformations belong to
-Phase 3 and remain independently testable.
+Phase 3 processes one explicit competition-season per pipeline execution. Raw counts remain
+available alongside derived features. Per-90 values and pass-completion rates are calculated
+deterministically; no model inference or generated statistic is involved.
 
 Competition-season identifiers describe source partitions, not guaranteed full-league coverage.
 Validation compares match counts across teams and reports strong imbalances. For the Bundesliga
 2023/2024 open-data partition, all 34 Bayer Leverkusen matches are present while opponent coverage
-is partial. Retrieval governance must not interpret those profiles as equally complete.
+is partial. The implementation is team-neutral, but documentation prefers Bayern Munich examples
+where coverage allows it. Bayern has only two observed matches in this partition, so its 21
+profiles retain features while percentiles are withheld.
+
+### Feature comparability
+
+Positions are mapped to stable scouting groups: goalkeeper, center back, fullback/wingback,
+defensive midfield, central midfield, attacking midfield, winger, and forward. A profile enters a
+percentile comparison only when it has at least 450 observed minutes and its primary team's source
+coverage is at least 80% of the best-covered team. The group must contain at least three eligible
+players. These thresholds are configurable from the command line.
+
+The Data Quality Score is a transparent `0..1` assessment, not a probability:
+
+```text
+0.30 × source coverage
++ 0.30 × minutes sufficiency
++ 0.25 × feature coverage
++ 0.15 × comparison-group availability
+```
+
+Profile text is a deterministic projection of stored facts and the three highest available
+position percentiles. It deliberately avoids unsupported tactical labels.
 
 The primary team for a player is the team with the most observed minutes. If a player changes
 teams during the season, `team_names` retains every observed team while the player remains one
@@ -97,8 +123,9 @@ merging identities.
 | `matches.parquet` | normalized match context and observed duration |
 | `events.parquet` | flat event records with stable source references |
 | `player_match_minutes.parquet` | lineup-derived minutes and position groups |
-| `player_season_profiles.parquet` | raw season profiles; dynamic maps stored as deterministic JSON |
-| `player_metric_evidence.parquet` | source-linked raw values and comparison groups |
+| `player_season_profiles.parquet` | raw/normalized features, percentiles, quality, and profile text |
+| `player_metric_evidence.parquet` | source-linked raw/normalized values and comparison groups |
+| `metric_definitions.json` | names, formulas, required event types, and limitations |
 | `validation_report.json` | validity, counts, errors, and limitations |
 | `manifest.json` | source metadata and artifact SHA-256 hashes |
 

@@ -1,7 +1,8 @@
-"""Cross-record validation for season-safe Phase 2 artifacts."""
+"""Cross-record validation for season-safe Phase 3 artifacts."""
 
 from collections import Counter
 
+from scoutrag.data.metric_definitions import FEATURE_METRICS
 from scoutrag.data.models import (
     CompetitionSeason,
     DataValidationReport,
@@ -9,7 +10,7 @@ from scoutrag.data.models import (
     NormalizedEvent,
     PlayerMatchParticipation,
 )
-from scoutrag.domain.player import PlayerMetricEvidence, PlayerSeasonProfile
+from scoutrag.domain.player import MetricDefinition, PlayerMetricEvidence, PlayerSeasonProfile
 
 
 def validate_dataset(
@@ -19,6 +20,7 @@ def validate_dataset(
     participations: list[PlayerMatchParticipation],
     profiles: list[PlayerSeasonProfile],
     evidence: list[PlayerMetricEvidence],
+    definitions: list[MetricDefinition],
 ) -> DataValidationReport:
     """Validate coverage, uniqueness, filters, and season consistency."""
     errors: list[str] = []
@@ -32,6 +34,8 @@ def validate_dataset(
         errors.append("No positive player-minute records were calculated.")
     if not profiles:
         errors.append("No player-season profiles were generated.")
+    if not definitions:
+        errors.append("No metric definitions were generated.")
 
     event_id_counts = Counter(event.event_id for event in events)
     duplicate_event_ids = sorted(
@@ -114,6 +118,37 @@ def validate_dataset(
     if wrong_evidence_seasons:
         errors.append(f"{wrong_evidence_seasons} evidence records use another season.")
 
+    expected_metrics = {spec.metric_name for spec in FEATURE_METRICS}
+    defined_metrics = {definition.metric_name for definition in definitions}
+    missing_definitions = sorted(expected_metrics - defined_metrics)
+    if missing_definitions:
+        errors.append(f"Engineered metrics without definitions: {missing_definitions}")
+    duplicate_definition_names = [
+        name
+        for name, count in Counter(item.metric_name for item in definitions).items()
+        if count > 1
+    ]
+    if duplicate_definition_names:
+        errors.append(f"Duplicate metric definitions: {sorted(duplicate_definition_names)}")
+
+    incomplete_feature_profiles = [
+        profile.player_id
+        for profile in profiles
+        if not expected_metrics.issubset(profile.structured_features)
+    ]
+    if incomplete_feature_profiles:
+        errors.append(f"Profiles missing engineered features: {incomplete_feature_profiles[:5]}")
+    undocumented_percentiles = sorted(
+        {
+            metric_name
+            for profile in profiles
+            for metric_name in profile.percentiles
+            if metric_name not in defined_metrics
+        }
+    )
+    if undocumented_percentiles:
+        errors.append(f"Percentiles without metric definitions: {undocumented_percentiles}")
+
     low_minute_profiles = sum(profile.minutes_played < 90 for profile in profiles)
     if low_minute_profiles:
         warnings.append(
@@ -140,10 +175,13 @@ def validate_dataset(
                 f"(maximum {maximum_team_coverage}, median {median_team_coverage} matches); "
                 "profiles reflect available source coverage, not a complete league season."
             )
-    warnings.append(
-        "Phase 2 features are raw counts. Per-90 values, percentiles, and final "
-        "data-quality scoring are intentionally deferred to Phase 3."
-    )
+    percentile_profile_count = sum(bool(profile.percentiles) for profile in profiles)
+    profiles_without_percentiles = len(profiles) - percentile_profile_count
+    if profiles_without_percentiles:
+        warnings.append(
+            f"{profiles_without_percentiles} profiles intentionally have no percentile because "
+            "minutes, source coverage, or comparison-group size is insufficient."
+        )
 
     return DataValidationReport(
         valid=not errors,
@@ -154,6 +192,9 @@ def validate_dataset(
         participation_count=len(participations),
         profile_count=len(profiles),
         evidence_count=len(evidence),
+        metric_definition_count=len(definitions),
+        percentile_profile_count=percentile_profile_count,
+        feature_version="phase3-v1",
         errors=errors,
         warnings=warnings,
     )

@@ -32,6 +32,8 @@ def test_event_normalization_preserves_retrieval_relevant_fields() -> None:
     assert event.outcome_name == "Incomplete"
     assert event.player_id == 1
     assert event.location_x == 45.2
+    assert event.end_location_x == 52.0
+    assert event.pass_length == 6.9
     assert event.under_pressure is True
     assert event.source_reference.endswith("/events/event-2")
 
@@ -51,8 +53,12 @@ def test_elapsed_timestamp_parsing(value: str, expected: float) -> None:
     ("position", "expected"),
     [
         ("Goalkeeper", "goalkeeper"),
-        ("Left Center Back", "defender"),
-        ("Right Center Midfield", "midfield"),
+        ("Left Center Back", "center_back"),
+        ("Left Wing Back", "fullback_wingback"),
+        ("Right Defensive Midfield", "defensive_midfield"),
+        ("Right Center Midfield", "central_midfield"),
+        ("Center Attacking Midfield", "attacking_midfield"),
+        ("Left Wing", "winger"),
         ("Center Forward", "forward"),
         ("Unknown", "other"),
     ],

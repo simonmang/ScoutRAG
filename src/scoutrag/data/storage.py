@@ -16,7 +16,7 @@ from scoutrag.data.models import (
     NormalizedEvent,
     PlayerMatchParticipation,
 )
-from scoutrag.domain.player import PlayerMetricEvidence, PlayerSeasonProfile
+from scoutrag.domain.player import MetricDefinition, PlayerMetricEvidence, PlayerSeasonProfile
 
 
 def _write_parquet(path: Path, records: list[dict[str, Any]]) -> None:
@@ -26,7 +26,7 @@ def _write_parquet(path: Path, records: list[dict[str, Any]]) -> None:
     table = pa.Table.from_pylist(records)
     metadata = dict(table.schema.metadata or {})
     metadata[b"data_source"] = b"StatsBomb Open Data"
-    metadata[b"scoutrag_phase"] = b"2"
+    metadata[b"scoutrag_phase"] = b"3"
     table = table.replace_schema_metadata(metadata)
     temporary_path = path.with_suffix(f"{path.suffix}.tmp")
     pq.write_table(table, temporary_path, compression="zstd")
@@ -54,6 +54,7 @@ class ParquetDatasetWriter:
         participations: list[PlayerMatchParticipation],
         profiles: list[PlayerSeasonProfile],
         evidence: list[PlayerMetricEvidence],
+        definitions: list[MetricDefinition],
         validation: DataValidationReport,
     ) -> list[Path]:
         output_root.mkdir(parents=True, exist_ok=True)
@@ -80,9 +81,20 @@ class ParquetDatasetWriter:
         )
         written_paths.append(validation_path)
 
+        definitions_path = output_root / "metric_definitions.json"
+        definitions_path.write_text(
+            json.dumps(
+                [definition.model_dump(mode="json") for definition in definitions],
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        written_paths.append(definitions_path)
+
         manifest_path = output_root / "manifest.json"
         manifest = {
-            "schema_version": "phase2-v1",
+            "schema_version": "phase3-v1",
             "generated_at": datetime.now(UTC).isoformat(),
             "source": {
                 "provider": "StatsBomb Open Data",

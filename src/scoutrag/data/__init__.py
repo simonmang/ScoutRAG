@@ -1,5 +1,6 @@
-"""StatsBomb ingestion and Phase 2 dataset construction."""
+"""StatsBomb ingestion and Phase 3 feature construction."""
 
+from scoutrag.data.feature_engineering import FeatureEngineeringConfig
 from scoutrag.data.models import (
     CompetitionSeason,
     DataValidationReport,
@@ -7,13 +8,15 @@ from scoutrag.data.models import (
     NormalizedEvent,
     PlayerMatchParticipation,
 )
-from scoutrag.data.pipeline import Phase2DataPipeline
+from scoutrag.data.pipeline import Phase2DataPipeline, Phase3DataPipeline
 
 __all__ = [
     "CompetitionSeason",
     "DataValidationReport",
+    "FeatureEngineeringConfig",
     "MatchRecord",
     "NormalizedEvent",
     "Phase2DataPipeline",
+    "Phase3DataPipeline",
     "PlayerMatchParticipation",
 ]

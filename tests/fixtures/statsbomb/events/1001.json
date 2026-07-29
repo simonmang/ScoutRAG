@@ -24,6 +24,8 @@
     "duration": 1.2,
     "under_pressure": true,
     "pass": {
+      "end_location": [52.0, 31.0],
+      "length": 6.9,
       "height": {"id": 1, "name": "Ground Pass"},
       "outcome": {"id": 9, "name": "Incomplete"}
     }
@@ -51,7 +53,10 @@
     "team": {"id": 10, "name": "Alpha FC"},
     "player": {"id": 2, "name": "Bea Alpha"},
     "position": {"id": 23, "name": "Center Forward"},
-    "shot": {"outcome": {"id": 97, "name": "Goal"}}
+    "shot": {
+      "statsbomb_xg": 0.42,
+      "outcome": {"id": 97, "name": "Goal"}
+    }
   },
   {
     "id": "event-5",
@@ -80,7 +85,12 @@
     "team": {"id": 10, "name": "Alpha FC"},
     "player": {"id": 3, "name": "Cara Alpha"},
     "position": {"id": 23, "name": "Center Forward"},
-    "pass": {"height": {"id": 1, "name": "Ground Pass"}}
+    "location": [55.0, 40.0],
+    "pass": {
+      "end_location": [75.0, 40.0],
+      "length": 20.0,
+      "height": {"id": 1, "name": "Ground Pass"}
+    }
   },
   {
     "id": "event-7",

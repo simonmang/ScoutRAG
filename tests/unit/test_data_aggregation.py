@@ -20,7 +20,7 @@ def participation(
         team_id=team_id,
         team_name=team_name,
         primary_position="Center Midfield",
-        position_group="midfield",
+        position_group="central_midfield",
         minutes_played=minutes,
         started=True,
         source_reference=f"statsbomb:matches/{match_id}/lineups/players/7",

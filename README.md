@@ -10,10 +10,10 @@ evidence governance. Its primary output is not free-form text: it is an auditabl
 `RecommendationEvidencePack` that can be inspected, evaluated, and optionally rendered by an
 LLM.
 
-> Project status: **Phase 2 — validated data pipeline**. The architecture foundation and a
-> reproducible StatsBomb ingestion pipeline are implemented. The reference build converts 34
-> Bundesliga matches into normalized events, player minutes, season profiles, metric evidence,
-> and auditable Parquet artifacts. No embedding, cross-encoder, or LLM model is downloaded.
+> Project status: **Phase 3 — position-aware feature engineering**. The reference build converts
+> 34 Bundesliga matches into normalized events, player minutes, per-90 features, position-group
+> percentiles, documented metrics, deterministic profile text, and auditable evidence. No
+> embedding, cross-encoder, or LLM model is downloaded.
 
 ## Why this is not a classic document RAG
 
@@ -35,6 +35,8 @@ flowchart TD
     SB[StatsBomb Open Data] --> DN[Download and normalize]
     DN --> PS[PlayerSeasonProfile]
     DN --> ME[PlayerMetricEvidence]
+    PS --> FE[Per-90 features + position percentiles]
+    ME --> FE
 
     U[User query] --> QA[QueryAnalyzer]
     QA --> QP[QueryProfile]
@@ -53,10 +55,10 @@ flowchart TD
     CP --> RR[PlayerReranker<br/>NoOp, later Cross-Encoder]
     RR --> G[RecommendationGovernor]
     G --> EP[RecommendationEvidencePack]
-    PS --> ER
-    PS --> SR
-    PS --> SP
-    PS --> DR
+    FE --> ER
+    FE --> SR
+    FE --> SP
+    FE --> DR
     ME --> G
 
     EP --> API[Retrieve API and dashboard]
@@ -65,7 +67,7 @@ flowchart TD
 
     classDef implemented fill:#dcfce7,stroke:#15803d,color:#052e16;
     classDef later fill:#f3f4f6,stroke:#6b7280,color:#111827;
-    class SB,DN,PS,ME,QA,QP,G,EP implemented;
+    class SB,DN,PS,ME,FE,QA,QP,G,EP implemented;
     class ER,SR,SP,DR,F,CP,RR,API,AG,AA later;
 ```
 
@@ -105,6 +107,11 @@ Implemented:
 - flat, source-linked event normalization
 - player minutes calculated from explicit lineup position intervals
 - raw event-count aggregation into season-specific profiles and metric evidence
+- 13 documented per-90 or rate features with stable calculation contracts
+- refined goalkeeper, defensive, midfield, winger, and forward comparison groups
+- tie-aware position-group percentiles gated by minutes and source coverage
+- a transparent Data Quality Score based on coverage, minutes, features, and comparison group
+- deterministic, non-generative player profile text
 - explicit multi-team transfer provenance with a minutes-based primary team
 - cross-record validation for coverage, duplicates, season integrity, and minutes
 - Zstandard-compressed Parquet artifacts and a SHA-256 reproducibility manifest
@@ -112,23 +119,23 @@ Implemented:
 
 Deliberately not implemented yet:
 
-- per-90 feature engineering, percentiles, and final data-quality scoring
 - exact, structured, sparse, or dense retrieval
 - embedding or cross-encoder model downloads
 - rule-based governance implementation
 - `/api/v1/retrieve`, `/api/v1/answer`, or `/api/v1/search`
 - dashboard and LLM generation
 
-## Phase 2 data pipeline
+## Phase 3 data pipeline
 
 The default reference source is StatsBomb Open Data for **1. Bundesliga 2023/2024**
 (`competition_id=9`, `season_id=281`). ScoutRAG downloads only the selected season rather than
 cloning the complete upstream repository.
 
 > Coverage limitation: this open-data competition entry contains Bayer Leverkusen's 34 league
-> matches, not all 306 Bundesliga fixtures. Leverkusen profiles therefore have broad season
-> coverage while opponent profiles are partial. The validation report detects this imbalance;
-> these Phase 2 raw profiles must not yet be treated as league-wide ranking evidence.
+> matches, not all 306 Bundesliga fixtures. ScoutRAG itself is team-neutral and uses Bayern Munich
+> in examples where the source permits it. Bayern appears in only two observed matches, so its
+> profiles are correctly marked as partial and receive no position percentile. Leverkusen is used
+> here only because the upstream test partition provides its full season.
 
 ```mermaid
 flowchart LR
@@ -140,8 +147,11 @@ flowchart LR
     I --> PM[PlayerMatchParticipation]
     NE --> A[Season aggregation]
     PM --> A
-    A --> PP[PlayerSeasonProfile]
-    A --> PE[PlayerMetricEvidence]
+    A --> FE[Per-90 features]
+    FE --> PG[Position-group percentiles]
+    PG --> PP[PlayerSeasonProfile + deterministic text]
+    PG --> PE[PlayerMetricEvidence]
+    MD[Metric definitions] --> FE
     PP --> V[Cross-record validation]
     PE --> V
     V --> PQ[Parquet + validation report + SHA-256 manifest]
@@ -168,8 +178,9 @@ Generated artifacts under `data/processed/bundesliga-2023-2024/`:
 | `matches.parquet` | competition-safe match metadata |
 | `events.parquet` | normalized, source-linked event records |
 | `player_match_minutes.parquet` | minutes, starts, teams, and dominant positions |
-| `player_season_profiles.parquet` | typed raw-count profiles for later feature engineering |
-| `player_metric_evidence.parquet` | individual audit-ready statistical observations |
+| `player_season_profiles.parquet` | raw and normalized features, percentiles, quality, profile text |
+| `player_metric_evidence.parquet` | raw and normalized audit-ready observations |
+| `metric_definitions.json` | calculation, required event types, and limitations for 13 metrics |
 | `validation_report.json` | errors, limitations, and coverage counts |
 | `manifest.json` | source metadata, schema version, byte sizes, and SHA-256 hashes |
 
@@ -181,7 +192,10 @@ Validated local reference build:
 | Normalized events | 137,765 |
 | Player-match participation records | 1,049 |
 | Unique player-season profiles | 373 |
-| Metric evidence records | 5,222 |
+| Metric evidence records | 11,563 |
+| Documented feature metrics | 13 |
+| Profiles with source-comparable position percentiles | 15 |
+| Bayern Munich profiles | 21, all transparently partial |
 | Explicit multi-team profiles | 4 |
 | Validation errors | 0 |
 
@@ -262,7 +276,7 @@ docs/
 
 1. ✅ Architecture foundation and typed evidence contracts
 2. ✅ Data pipeline and validated season-specific StatsBomb evidence
-3. Per-90 features, refined position groups, percentiles, profile text, and metric definitions
+3. ✅ Per-90 features, refined position groups, percentiles, profile text, and metric definitions
 4. Exact, structured, BM25, and multilingual bi-encoder retrieval with normalized fusion
 5. Golden retrieval dataset, candidate metrics, and ablation studies
 6. Cross-encoder reranking and optional ONNX inference
