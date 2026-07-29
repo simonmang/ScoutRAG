@@ -41,5 +41,5 @@ after changing the player profiles or embedding model:
 scoutrag-retrieve "Zeige das Profil von Joshua Kimmich" --rebuild-dense-index
 ```
 
-The Docker and Render demo explicitly disable dense retrieval, so the committed snapshot is
-enough to run exact, structured, and BM25 retrieval plus governance without network access.
+The local launcher and Docker demo explicitly disable dense retrieval, so the committed snapshot
+is enough to run exact, structured, and BM25 retrieval plus governance without network access.

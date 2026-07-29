@@ -14,7 +14,7 @@ ScoutRAG's first portfolio-ready release.
 - bilingual football bi-encoder training and Hard-Negative evaluation
 - fact-bound structured answer generation and local groundedness validation
 - hallucination benchmark with safe template fallback
-- compact source-attributed demo snapshot, Docker image, and Render Blueprint
+- compact source-attributed demo snapshot, Windows launcher, and Docker image
 
 ### Safety and limitations
 

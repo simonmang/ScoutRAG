@@ -1,8 +1,8 @@
-# Deployment and portfolio demo
+# Local dashboard and portfolio demo
 
-ScoutRAG ships a compact, model-free demonstration image. It contains only the generated
+ScoutRAG ships a compact, model-free local demonstration. It contains only the generated
 `PlayerSeasonProfile` and `PlayerMetricEvidence` artifacts required by the application—no raw
-events and no downloaded embedding model.
+events, downloaded embedding model, API credential, or public web service.
 
 ## Demo data
 
@@ -24,6 +24,29 @@ The snapshot hashes and warnings are recorded in:
 - `data/processed/bundesliga-2023-2024/manifest.json`
 - `data/processed/bundesliga-2023-2024/validation_report.json`
 
+## Windows one-click start
+
+Double-click `start_dashboard.cmd` in the repository root. It calls the PowerShell launcher,
+checks Python and both demo artifacts, selects the local model-free configuration, opens the
+browser, and starts FastAPI.
+
+The direct PowerShell equivalent is:
+
+```powershell
+.\start_dashboard.ps1
+```
+
+Useful options:
+
+```powershell
+.\start_dashboard.ps1 -Check
+.\start_dashboard.ps1 -NoBrowser -Port 8080
+.\start_dashboard.ps1 -EnableDenseRetrieval
+```
+
+`-EnableDenseRetrieval` expects the configured sentence-transformer model to exist in the local
+cache. The standard local demo deliberately avoids that dependency.
+
 ## Docker
 
 Build and run the same model-free image used by the deployment blueprint:
@@ -44,18 +67,3 @@ SCOUTRAG_LOCAL_FILES_ONLY=true
 Exact, structured, and BM25 retrieval, fusion, governance, API, dashboard, trace, and safe answers
 remain active. Dense retrieval and external generation stay optional because a portfolio demo
 should not require model downloads, API credentials, or paid calls.
-
-## Render Blueprint
-
-`render.yaml` describes one free Docker web service in the Frankfurt region with `/health` as its
-HTTP health check. Auto-deployment is disabled for copies created through the public Deploy to
-Render button.
-
-[Deploy ScoutRAG to Render](https://render.com/deploy?repo=https://github.com/simonmang/ScoutRAG)
-
-After reviewing the Blueprint, approve it in your Render account. Render builds the checked-in
-Dockerfile and assigns an `onrender.com` URL. Free instances can sleep while inactive, so the
-first request after inactivity may take longer.
-
-Do not enable `SCOUTRAG_ANSWER_MODE=openai` on a public demo unless an explicit spending limit,
-request throttling, and a securely stored `OPENAI_API_KEY` are configured.
