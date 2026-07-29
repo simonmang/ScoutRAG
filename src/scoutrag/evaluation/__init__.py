@@ -1,6 +1,14 @@
 """Retrieval evaluation metrics, golden data, and ablation studies."""
 
 from scoutrag.evaluation.dataset import load_golden_dataset
+from scoutrag.evaluation.governance import (
+    GovernanceEvaluationReport,
+    GovernanceEvaluator,
+    GovernanceGoldenCase,
+    GovernanceGoldenDataset,
+    GovernanceMetrics,
+    load_governance_dataset,
+)
 from scoutrag.evaluation.metrics import evaluate_ranking
 from scoutrag.evaluation.models import (
     AblationReport,
@@ -25,6 +33,11 @@ __all__ = [
     "GoldenDataset",
     "GoldenJudgment",
     "GoldenQuery",
+    "GovernanceEvaluationReport",
+    "GovernanceEvaluator",
+    "GovernanceGoldenCase",
+    "GovernanceGoldenDataset",
+    "GovernanceMetrics",
     "KMetrics",
     "LatencyStats",
     "QueryEvaluation",
@@ -35,4 +48,5 @@ __all__ = [
     "RetrievalMetrics",
     "evaluate_ranking",
     "load_golden_dataset",
+    "load_governance_dataset",
 ]

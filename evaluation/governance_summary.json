@@ -1,0 +1,44 @@
+{
+  "schema_version": "phase7-governance-summary-v1",
+  "dataset_version": "phase7-governance-v1",
+  "profile_count": 373,
+  "metric_evidence_count": 11563,
+  "case_count": 7,
+  "retrieval_configuration": [
+    "exact",
+    "structured",
+    "bm25",
+    "pretrained_multilingual_bi_encoder"
+  ],
+  "metrics": {
+    "false_recommendation_rate": 0.0,
+    "abstention_recall": 1.0,
+    "abstention_precision": 1.0,
+    "coverage": 0.285714,
+    "selective_accuracy": 1.0,
+    "limited_case_recall": 1.0,
+    "verdict_accuracy": 1.0
+  },
+  "verdicts": {
+    "sufficient": 1,
+    "limited": 1,
+    "insufficient": 3,
+    "conflicting": 1,
+    "out_of_scope": 1
+  },
+  "bayern_case": {
+    "query": "Zeige das Profil von Aleksandar Pavlović",
+    "verdict": "limited",
+    "evidence_quality_score": 0.812,
+    "warnings": [
+      "Source data coverage is limited.",
+      "At least one leading candidate has a limited minute sample."
+    ]
+  },
+  "limitations": [
+    "Seven rule-authored regression cases are not an independent annotator study.",
+    "Coverage is intentionally low because five cases require abstention.",
+    "The Evidence Quality Score is rule-based and uncalibrated, not a probability.",
+    "The evaluation verifies safety decisions on one local source partition."
+  ]
+}

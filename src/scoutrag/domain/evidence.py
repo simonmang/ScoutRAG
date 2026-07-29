@@ -2,7 +2,7 @@
 
 from enum import StrEnum
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from scoutrag.domain.base import ScoutRAGModel
 from scoutrag.domain.player import PlayerMetricEvidence
@@ -28,6 +28,15 @@ class RecommendationGovernance(ScoutRAGModel):
     reasons: list[str] = Field(default_factory=list)
     missing_evidence: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    factors: dict[str, float] = Field(default_factory=dict)
+
+    @field_validator("factors")
+    @classmethod
+    def validate_factors(cls, values: dict[str, float]) -> dict[str, float]:
+        invalid = {name: value for name, value in values.items() if not 0 <= value <= 1}
+        if invalid:
+            raise ValueError(f"governance factors must be between 0 and 1: {invalid}")
+        return values
 
     @model_validator(mode="after")
     def require_explanation_for_non_sufficient_verdict(

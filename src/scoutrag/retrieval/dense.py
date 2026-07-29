@@ -80,8 +80,15 @@ class SentenceTransformerEmbeddingModel:
                     "Dense retrieval requires the optional 'retrieval' dependencies: "
                     'pip install -e ".[retrieval]"'
                 ) from error
+            model_path = self.model_name
+            if self.local_files_only and not Path(model_path).exists():
+                hub = importlib.import_module("huggingface_hub")
+                model_path = hub.snapshot_download(
+                    repo_id=self.model_name,
+                    local_files_only=True,
+                )
             self._model = module.SentenceTransformer(
-                self.model_name,
+                model_path,
                 local_files_only=self.local_files_only,
             )
         return self._model

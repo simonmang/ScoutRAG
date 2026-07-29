@@ -231,7 +231,7 @@ flowchart LR
     R --> E
     E --> M[MRR, nDCG, Hit Rate]
     E --> L[Warm per-query latency]
-    R -. relevance only .-> G[Future RecommendationGovernor]
+    R -. relevance only .-> G[RecommendationGovernor]
 ```
 
 The evaluator retrieves each query once, so baseline and cross-encoder receive identical
@@ -242,6 +242,38 @@ quantized variants alongside FP32.
 The pretrained MS MARCO cross-encoder currently remains opt-in because it reduced the small
 football Golden Dataset's ranking quality. This activation policy is separate from the component
 being technically available and tested.
+
+## Phase 7 governance architecture
+
+`GovernedRetrievalPipeline` wraps the public retrieval result without changing candidate recall or
+ranking. It selects typed evidence for returned candidate IDs, invokes
+`RuleBasedRecommendationGovernor`, and assembles runtime data and all decisions into one
+`RecommendationEvidencePack`.
+
+```mermaid
+flowchart LR
+    H[HybridRetrievalResult] --> C[Ranked candidates]
+    C --> EI[PlayerMetricEvidenceIndex]
+    EI --> ME[Candidate-scoped evidence]
+    H --> RG[RuleBasedRecommendationGovernor]
+    ME --> RG
+    RG --> V[Verdict + 10 factors]
+    H --> EP[RecommendationEvidencePack]
+    ME --> EP
+    V --> EP
+    EP --> EV[GovernanceEvaluator]
+    EV --> FR[False Recommendation Rate]
+    EV --> AB[Abstention precision / recall]
+    EV --> SA[Coverage / selective accuracy]
+```
+
+Verdict rules use safety precedence: out-of-scope and empty results short-circuit; conflicts are
+reported before score thresholds; missing requested metrics or comparison groups force
+insufficient evidence. A result can be sufficient only after every blocking rule passes.
+
+The ten factor values stay separate from dense, fused, and reranker scores. Exact identity lookup
+and statistical player discovery use different factor weights because their evidence obligations
+differ. Full rules and thresholds are documented in `docs/governance.md`.
 
 ## Component ports
 
@@ -295,7 +327,7 @@ The future `AnswerGenerator` receives only a `RecommendationEvidencePack`. Expec
 Generation cannot calculate new statistics, add candidates, fill missing values, invent seasons,
 or create unsupported tactical claims.
 
-## Deployment boundary in Phase 4
+## Deployment boundary through Phase 7
 
 Only `GET /health` is exposed. Retrieval endpoints are intentionally deferred until their
 underlying pipeline stages exist:

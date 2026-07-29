@@ -76,6 +76,16 @@ TRAIT_METRICS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
         ),
         ("shots_per_90", "expected_goals_per_90"),
     ),
+    "creativity": (
+        (
+            "expected assists",
+            "expected assist",
+            "erwartete assists",
+            "kreativ",
+            "chance creation",
+        ),
+        ("expected_assists_per_90",),
+    ),
     "defending": (
         ("verteidigung", "defending", "defensivstark"),
         ("interceptions_per_90", "tackles_per_90", "clearances_per_90"),
@@ -97,6 +107,14 @@ TEAM_ALIASES = {
         "fc bayern münchen",
         "fc bayern",
     ),
+}
+
+COMPETITION_ALIASES: dict[str, tuple[str, ...]] = {
+    "1. Bundesliga": ("1. bundesliga", "bundesliga"),
+    "Premier League": ("premier league",),
+    "La Liga": ("la liga", "laliga"),
+    "Serie A": ("serie a",),
+    "Ligue 1": ("ligue 1",),
 }
 
 
@@ -127,7 +145,12 @@ class RuleBasedQueryAnalyzer:
                 requested_traits.append(trait)
                 requested_metrics.extend(metrics)
 
-        competitions = sorted(
+        competitions = {
+            competition_name
+            for competition_name, aliases in COMPETITION_ALIASES.items()
+            if any(alias in normalized for alias in aliases)
+        }
+        competitions.update(
             {
                 profile.competition_name
                 for profile in self.profiles
@@ -155,7 +178,7 @@ class RuleBasedQueryAnalyzer:
             requested_metrics=list(dict.fromkeys(requested_metrics)),
             named_players=named_players,
             team_filters=teams,
-            competition_filters=competitions,
+            competition_filters=sorted(competitions),
             season_filters=seasons,
             minimum_minutes=minimum_minutes,
             result_count=result_count,

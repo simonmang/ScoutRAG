@@ -2,11 +2,15 @@
 
 from collections.abc import Sequence
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from scoutrag.domain.player import PlayerSeasonProfile
-from scoutrag.retrieval.dense import DensePlayerRetriever
+from scoutrag.retrieval.dense import (
+    DensePlayerRetriever,
+    SentenceTransformerEmbeddingModel,
+)
 from scoutrag.retrieval.exact import ExactPlayerRetriever
 from scoutrag.retrieval.fusion import FusionWeights, WeightedRetrievalFusion
 from scoutrag.retrieval.pipeline import HybridRetrievalPipeline
@@ -159,6 +163,18 @@ def test_team_name_becomes_a_hard_filter(profiles: list[PlayerSeasonProfile]) ->
     assert {candidate.profile.team_name for candidate in exact_candidates} == {"Bayern Munich"}
 
 
+def test_query_analysis_preserves_unknown_competition_and_missing_metric_requests(
+    profiles: list[PlayerSeasonProfile],
+) -> None:
+    analyzed = RuleBasedQueryAnalyzer(profiles).analyze(
+        "Kreativer Zehner mit Expected Assists in der Premier League"
+    )
+
+    assert analyzed.competition_filters == ["Premier League"]
+    assert analyzed.requested_traits == ["creativity"]
+    assert analyzed.requested_metrics == ["expected_assists_per_90"]
+
+
 @pytest.mark.parametrize(
     ("query", "expected_intent"),
     [
@@ -232,6 +248,43 @@ def test_dense_index_can_be_reused_without_document_encoding(
 
     assert index_path.exists()
     assert len(reused.document_embeddings) == len(profiles)
+
+
+def test_local_sentence_transformer_resolves_cached_snapshot_before_loading(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeSentenceTransformer:
+        def __init__(self, model_path: str, *, local_files_only: bool) -> None:
+            calls["model_path"] = model_path
+            calls["local_files_only"] = local_files_only
+
+        def encode_query(self, texts: list[str], **kwargs: object) -> list[list[float]]:
+            calls["query"] = (texts, kwargs)
+            return [[1.0, 0.0]]
+
+    def import_module(name: str) -> object:
+        if name == "huggingface_hub":
+            return SimpleNamespace(
+                snapshot_download=lambda **kwargs: (
+                    calls.update({"snapshot": kwargs}) or "C:/cache/model"
+                )
+            )
+        return SimpleNamespace(SentenceTransformer=FakeSentenceTransformer)
+
+    monkeypatch.setattr(
+        "scoutrag.retrieval.dense.importlib.import_module",
+        import_module,
+    )
+    model = SentenceTransformerEmbeddingModel("test/model", local_files_only=True)
+
+    assert model.encode_queries(["Bayern midfielder"]) == [[1.0, 0.0]]
+    assert calls["snapshot"] == {
+        "repo_id": "test/model",
+        "local_files_only": True,
+    }
+    assert calls["model_path"] == "C:/cache/model"
 
 
 def test_fusion_normalizes_scales_and_preserves_strategy_provenance(

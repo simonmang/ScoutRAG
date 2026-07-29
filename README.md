@@ -10,10 +10,10 @@ evidence governance. Its primary output is not free-form text: it is an auditabl
 `RecommendationEvidencePack` that can be inspected, evaluated, and optionally rendered by an
 LLM.
 
-> Project status: **Phase 6 — evaluated cross-encoder reranking**. A multilingual CrossEncoder now
-> reranks the shared broad candidate pool behind the `PlayerReranker` port. Before/after MRR,
-> nDCG, Hit Rate, and warm latency are measured with Torch and ONNX. Governance implementation and
-> LLM generation remain separate phases.
+> Project status: **Phase 7 — evidence governance and safe abstention**. A rule-based
+> `RecommendationGovernor` now evaluates ten inspectable evidence factors and produces a complete
+> LLM-free `RecommendationEvidencePack`. Versioned safety cases measure False Recommendation Rate,
+> abstention, coverage, selective accuracy, and correct `LIMITED` handling.
 
 ## Why this is not a classic document RAG
 
@@ -67,14 +67,15 @@ flowchart TD
 
     classDef implemented fill:#dcfce7,stroke:#15803d,color:#052e16;
     classDef later fill:#f3f4f6,stroke:#6b7280,color:#111827;
-    class SB,DN,PS,ME,FE,QA,QP,ER,SR,SP,DR,F,CP,RR implemented;
-    class G,EP,API,AG,AA later;
+    class SB,DN,PS,ME,FE,QA,QP,ER,SR,SP,DR,F,CP,RR,G,EP implemented;
+    class API,AG,AA later;
 ```
 
 The component boundaries are explicit and every recall strategy is independently testable. See
 [the detailed architecture](docs/architecture.md) and
 [the retrieval design](docs/retrieval.md) for responsibilities, score semantics, and request
-flows.
+flows. Governance factors and verdict precedence are documented in
+[the Phase 7 governance guide](docs/governance.md).
 
 ### Separation of responsibilities
 
@@ -132,14 +133,60 @@ Implemented:
 - isolated fused-order versus reranked-order evaluation over identical broad candidate pools
 - Hit Rate@K, MRR/nDCG deltas, and per-query warm reranking latency
 - tested Torch and explicit ONNX CPU inference with `scoutrag-rerank-evaluate`
+- intent-aware `RuleBasedRecommendationGovernor` with configurable safety thresholds
+- ten separately reported evidence factors and non-probabilistic Evidence Quality Score
+- explicit sufficient, limited, insufficient, conflicting, and out-of-scope decisions
+- candidate-safe evidence indexing and complete LLM-free `RecommendationEvidencePack` assembly
+- versioned abstention cases and False Recommendation Rate evaluation
+- offline-safe dense model loading through a resolved local model snapshot
+- `scoutrag-govern` and `scoutrag-govern-evaluate` command-line interfaces
 
 Deliberately not implemented yet:
 
 - football-specific bi-encoder fine-tuning
 - football-specific cross-encoder fine-tuning
-- rule-based governance implementation
 - `/api/v1/retrieve`, `/api/v1/answer`, or `/api/v1/search`
 - dashboard and LLM generation
+
+## Phase 7 evidence governance
+
+Produce a governed Evidence Pack without an LLM:
+
+```powershell
+scoutrag-govern "Zeige das Profil von Aleksandar Pavlović" --local-files-only
+```
+
+Run the seven committed safety cases:
+
+```powershell
+scoutrag-govern-evaluate --local-files-only
+```
+
+Validated local result over 373 profiles and 11,563 metric-evidence records:
+
+| Safety metric | Result |
+| --- | ---: |
+| False Recommendation Rate | **0.000000** |
+| Abstention Recall | 1.000000 |
+| Abstention Precision | 1.000000 |
+| Limited-case Recall | 1.000000 |
+| Selective Accuracy | 1.000000 |
+| Verdict Accuracy | 1.000000 |
+| Coverage | 0.285714 |
+
+Coverage is intentionally low because five of seven cases are designed to require abstention.
+The cases include a missing requested metric, no matching player, unknown competition,
+unsupported prediction, conflicting seasons, a source-covered ranking, and a partial Bayern
+profile.
+
+For Aleksandar Pavlović, exact identity retrieval is supported but the verdict is `LIMITED`
+because the open-data Bayern sample has low source coverage and limited observed minutes.
+The score is reported as `Evidence Quality Score: 0.812`, never as an 81.2% correctness
+probability.
+
+See the [machine-readable Phase 7 summary](evaluation/governance_summary.json), the
+[versioned cases](evaluation/governance_cases.json), and the
+[governance design](docs/governance.md).
 
 ## Phase 6 cross-encoder reranking
 
@@ -387,6 +434,7 @@ src/scoutrag/
 ├── application/    # composition contracts and temporary adapters
 ├── data/           # download, normalization, minutes, validation, and Parquet
 ├── domain/         # typed, framework-independent football and evidence models
+├── governance/     # evidence index, rule engine, pack assembly, and CLI
 ├── ports/          # interfaces for every replaceable pipeline role
 ├── retrieval/      # query analysis, four retrievers, fusion, trace, and CLI
 ├── reranking/      # cross-encoder model adapter and PlayerReranker
@@ -402,7 +450,8 @@ data/
 ├── raw/            # ignored downloaded JSON
 └── processed/      # ignored generated artifacts
 docs/
-└── architecture.md
+├── architecture.md
+└── governance.md
 ```
 
 ## Roadmap
@@ -413,13 +462,13 @@ docs/
 4. ✅ Exact, structured, BM25, and multilingual bi-encoder retrieval with normalized fusion
 5. ✅ Golden retrieval dataset, candidate metrics, and ablation studies
 6. ✅ Cross-encoder reranking, before/after evaluation, and tested ONNX inference
-7. Rule-based evidence governance with false-recommendation evaluation
+7. ✅ Rule-based evidence governance with false-recommendation evaluation
 8. Retrieve/answer/search APIs and explainability dashboard
 9. Football bi-encoder fine-tuning with hard negatives
 10. Governed, grounded optional answer generation
 
 The evaluation plan treats candidate retrieval, reranking, governance, and generation as separate
-systems. In particular, **False Recommendation Rate** will measure how often ScoutRAG presents a
+systems. In particular, **False Recommendation Rate** measures how often ScoutRAG presents a
 recommendation as well-supported when the available evidence is insufficient.
 
 ## License

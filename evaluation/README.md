@@ -85,3 +85,32 @@ before becoming the default.
 Warm local CPU mean latency was 824.084 ms with Torch and 310.008 ms with the model's FP32 ONNX
 artifact. These values exclude loading and warm-up and should not be generalized to other
 hardware.
+
+## Phase 7 governance evaluation
+
+`governance_cases.json` is a versioned safety regression seed. It checks missing metrics, limited
+minutes and Bayern coverage, empty hard-filter results, unknown competition, unsupported
+prediction, conflicting seasons, and one source-covered sufficient ranking.
+
+```powershell
+scoutrag-govern-evaluate --local-files-only
+```
+
+| Metric | Result |
+| --- | ---: |
+| False Recommendation Rate | **0.000000** |
+| Abstention Recall | 1.000000 |
+| Abstention Precision | 1.000000 |
+| Coverage | 0.285714 |
+| Selective Accuracy | 1.000000 |
+| Limited-case Recall | 1.000000 |
+| Verdict Accuracy | 1.000000 |
+
+False Recommendation Rate counts an unsafe case as an error only when it incorrectly receives
+`SUFFICIENT`. A transparent `LIMITED` result is not considered a confident false recommendation.
+Coverage is the share of cases receiving `SUFFICIENT` or `LIMITED`; it is intentionally low in a
+dataset where five of seven queries are designed to require abstention.
+
+The committed `governance_summary.json` records the reviewed aggregate. Full per-case results are
+generated below the ignored `evaluation/results/` directory. Seven rule-authored cases are a
+regression baseline, not evidence of calibrated production safety.
