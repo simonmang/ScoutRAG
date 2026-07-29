@@ -10,10 +10,10 @@ evidence governance. Its primary output is not free-form text: it is an auditabl
 `RecommendationEvidencePack` that can be inspected, evaluated, and optionally rendered by an
 LLM.
 
-> Project status: **Phase 8 — governed API and explainability dashboard**. The same lazy-loaded,
-> LLM-free retrieval pipeline now powers separate retrieve, compact-search, and answer endpoints.
-> A responsive evidence console exposes governance verdicts, all ten quality factors, candidate
-> provenance, metric evidence, filters, and stage timings.
+> Project status: **Phase 9 — football bi-encoder fine-tuning**. A versioned bilingual training
+> seed, constrained Hard-Negative miner, reproducible Sentence Transformers trainer, before/after
+> evaluation, and Model Card are complete. The selected checkpoint improves difficult-negative
+> discrimination but remains opt-in because Golden ranking quality regressed slightly.
 
 ## Why this is not a classic document RAG
 
@@ -144,13 +144,49 @@ Implemented:
 - a deterministic verdict-aware `TemplateAnswerGenerator` with safe abstention
 - responsive explainability dashboard with candidate details and retrieval trace
 - HTTP integration tests using the real model-free pipeline boundary
+- versioned German/English football retrieval training and validation queries
+- domain-constrained Hard-Negative mining with explicit positive and easy-negative profiles
+- reproducible `MultipleNegativesRankingLoss` fine-tuning and checkpoint metadata
+- baseline-vs.-fine-tuned evaluation for Golden retrieval, difficult negatives, and language
+  variants
+- a documented opt-in activation policy and complete football bi-encoder Model Card
 
 Deliberately not implemented yet:
 
-- football-specific bi-encoder fine-tuning
 - football-specific cross-encoder fine-tuning
 - optional LLM-based answer generation
 - Phase 10 hallucination and groundedness evaluation
+
+## Phase 9 football bi-encoder fine-tuning
+
+Run the reproducible workflow after building the Phase 3 profiles:
+
+```powershell
+python -m pip install -e ".[training]"
+scoutrag-bi-encoder mine --local-files-only
+scoutrag-bi-encoder train --local-files-only
+scoutrag-bi-encoder evaluate --local-files-only
+```
+
+The committed seed contains 20 training and 12 held-out German/English query variants. Every
+example resolves to a positive profile, an embedding-similar same-position Hard Negative that
+fails one central condition, and a different-position Easy Negative.
+
+Validated local CPU result:
+
+| Model | Candidate Recall | MRR | nDCG@5 | Hard-negative accuracy | Bilingual stability |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Pretrained baseline | 1.000 | **1.000** | **0.877445** | 0.250000 | 0.166667 |
+| Football fine-tuned | 1.000 | 0.950 | 0.859452 | **0.416667** | **0.333333** |
+
+The fine-tuned model improves the task it was trained for, including both German and English, but
+does not yet improve the full Golden ranking. It therefore remains opt-in and the pretrained
+encoder stays the default. This activation rule prevents a targeted training win from hiding
+regressions elsewhere.
+
+See the [Model Card](docs/model-card.md), the
+[machine-readable comparison](evaluation/bi_encoder_summary.json), and the
+[versioned query specifications](evaluation/bi_encoder_training_queries.json).
 
 ## Phase 8 governed API and dashboard
 
@@ -470,6 +506,7 @@ src/scoutrag/
 ├── ports/          # interfaces for every replaceable pipeline role
 ├── retrieval/      # query analysis, four retrievers, fusion, trace, and CLI
 ├── reranking/      # cross-encoder model adapter and PlayerReranker
+├── training/       # hard-negative mining, bi-encoder trainer, evaluation, and CLI
 ├── evaluation/     # golden data, IR metrics, ablations, reports, and CLI
 ├── config.py
 ├── logging.py
@@ -484,6 +521,7 @@ data/
 docs/
 ├── api.md
 ├── architecture.md
+├── model-card.md
 └── governance.md
 ```
 
@@ -497,7 +535,7 @@ docs/
 6. ✅ Cross-encoder reranking, before/after evaluation, and tested ONNX inference
 7. ✅ Rule-based evidence governance with false-recommendation evaluation
 8. ✅ Retrieve/answer/search APIs and explainability dashboard
-9. Football bi-encoder fine-tuning with hard negatives
+9. ✅ Football bi-encoder fine-tuning with hard negatives
 10. Governed, grounded optional answer generation
 
 The evaluation plan treats candidate retrieval, reranking, governance, and generation as separate

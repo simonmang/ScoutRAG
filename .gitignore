@@ -12,6 +12,8 @@ dist/
 htmlcov/
 evaluation/results/*
 !evaluation/results/.gitkeep
+models/*
+!models/.gitkeep
 
 # Downloaded and generated football data (keep directory documentation only)
 data/raw/*

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scoutrag"
-version = "0.8.0"
+version = "0.9.0"
 description = "Evidence-based, multi-stage retrieval architecture for football scouting"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -25,6 +25,7 @@ scoutrag-govern = "scoutrag.governance.cli:main"
 scoutrag-govern-evaluate = "scoutrag.evaluation.governance_cli:main"
 scoutrag-rerank-evaluate = "scoutrag.evaluation.reranking_cli:main"
 scoutrag-retrieve = "scoutrag.retrieval.cli:main"
+scoutrag-bi-encoder = "scoutrag.training.cli:main"
 
 [project.optional-dependencies]
 dev = [
@@ -39,6 +40,11 @@ retrieval = [
 ]
 onnx = [
     "sentence-transformers[onnx]>=5.6,<6.0",
+]
+training = [
+    "accelerate>=1.10,<2.0",
+    "datasets>=4.0,<5.0",
+    "sentence-transformers>=5.6,<6.0",
 ]
 
 [tool.hatch.build.targets.wheel]

@@ -1,0 +1,63 @@
+{
+  "schema_version": "phase9-bi-encoder-summary-v1",
+  "training_dataset": "phase9-football-retrieval-v1",
+  "base_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "selected_checkpoint": {
+    "epochs": 3,
+    "batch_size": 8,
+    "learning_rate": 0.00002,
+    "warmup_ratio": 0.1,
+    "seed": 42,
+    "loss": "MultipleNegativesRankingLoss",
+    "training_examples": 20,
+    "validation_examples": 12,
+    "dataset_fingerprint": "c95041674b7bfc34c27695ffe36699839b7bedd9720dfccc4338f04283842fd1"
+  },
+  "baseline": {
+    "candidate_recall": 1.0,
+    "mean_reciprocal_rank": 1.0,
+    "ndcg_at_5": 0.877445,
+    "hard_negative_accuracy": 0.25,
+    "easy_negative_accuracy": 1.0,
+    "pairwise_mean_reciprocal_rank": 0.625,
+    "mean_positive_hard_margin": -0.018547,
+    "german_hard_negative_accuracy": 0.166667,
+    "english_hard_negative_accuracy": 0.333333,
+    "bilingual_pair_stability": 0.166667
+  },
+  "fine_tuned": {
+    "candidate_recall": 1.0,
+    "mean_reciprocal_rank": 0.95,
+    "ndcg_at_5": 0.859452,
+    "hard_negative_accuracy": 0.416667,
+    "easy_negative_accuracy": 1.0,
+    "pairwise_mean_reciprocal_rank": 0.708333,
+    "mean_positive_hard_margin": 0.010259,
+    "german_hard_negative_accuracy": 0.333333,
+    "english_hard_negative_accuracy": 0.5,
+    "bilingual_pair_stability": 0.333333
+  },
+  "delta": {
+    "candidate_recall": 0.0,
+    "mean_reciprocal_rank": -0.05,
+    "ndcg_at_5": -0.017993,
+    "hard_negative_accuracy": 0.166667,
+    "pairwise_mean_reciprocal_rank": 0.083333,
+    "mean_positive_hard_margin": 0.028806,
+    "german_hard_negative_accuracy": 0.166666,
+    "english_hard_negative_accuracy": 0.166667,
+    "bilingual_pair_stability": 0.166666
+  },
+  "activation": {
+    "status": "opt_in",
+    "reason": "The checkpoint improves difficult-negative discrimination and bilingual stability but reduces held-out Golden nDCG@5 and MRR on the small seed.",
+    "default_model_unchanged": true
+  },
+  "limitations": [
+    "The training seed has 20 examples and the validation split has 12 examples.",
+    "Validation uses unseen phrasings but is not an independent multi-annotator dataset.",
+    "The Golden Dataset has only 10 queries and 21 positive judgments.",
+    "The source partition is not full-league coverage for Bayern Munich.",
+    "The generated 470 MB model artifact is intentionally excluded from Git."
+  ]
+}

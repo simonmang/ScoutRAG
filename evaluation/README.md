@@ -114,3 +114,25 @@ dataset where five of seven queries are designed to require abstention.
 The committed `governance_summary.json` records the reviewed aggregate. Full per-case results are
 generated below the ignored `evaluation/results/` directory. Seven rule-authored cases are a
 regression baseline, not evidence of calibrated production safety.
+
+## Phase 9 bi-encoder fine-tuning
+
+`bi_encoder_training_queries.json` separates 20 training queries from 12 validation paraphrases.
+The miner uses the pretrained model only to rank candidates inside explicit football constraints:
+same position plus a failed target metric, wrong team, or wrong player. It also selects one
+different-position Easy Negative.
+
+```powershell
+scoutrag-bi-encoder mine --local-files-only
+scoutrag-bi-encoder train --local-files-only
+scoutrag-bi-encoder evaluate --local-files-only
+```
+
+| Model | Golden MRR | Golden nDCG@5 | Hard-negative accuracy | Pairwise MRR | DE | EN |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Pretrained | **1.000** | **0.877445** | 0.250000 | 0.625000 | 0.166667 | 0.333333 |
+| Fine-tuned | 0.950 | 0.859452 | **0.416667** | **0.708333** | **0.333333** | **0.500000** |
+
+Candidate Recall remains 1.000 for both. The model is opt-in because targeted hard-negative gains
+do not compensate for the small Golden ranking regression on this seed. Full aggregate values,
+training parameters, and limitations are committed in `bi_encoder_summary.json`.

@@ -129,7 +129,7 @@ class DensePlayerRetriever:
         ):
             if not matches_hard_filters(profile, query_profile):
                 continue
-            scored.append((_cosine_similarity(query_embedding, document_embedding), profile))
+            scored.append((cosine_similarity(query_embedding, document_embedding), profile))
         scored.sort(key=lambda item: (-item[0], item[1].player_name, item[1].season_name))
         return [
             PlayerCandidate(
@@ -183,7 +183,8 @@ class DensePlayerRetriever:
         return embeddings
 
 
-def _cosine_similarity(left: Sequence[float], right: Sequence[float]) -> float:
+def cosine_similarity(left: Sequence[float], right: Sequence[float]) -> float:
+    """Calculate cosine similarity without assigning confidence semantics."""
     if len(left) != len(right):
         raise ValueError("query and document embedding dimensions differ")
     left_norm = math.sqrt(sum(value * value for value in left))

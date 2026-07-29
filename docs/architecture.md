@@ -356,3 +356,38 @@ flowchart LR
 `/answer` does not accept a query and does not hide another retrieval call. In Phase 8 its
 default adapter is deterministic and LLM-free. The dashboard is a pure consumer: it displays
 candidate evidence, governance factors, and trace data but owns no domain rules.
+
+## Phase 9 training architecture
+
+Fine-tuning is an offline workflow and cannot modify online governance or score semantics.
+Training queries reference typed player IDs and explicit domain constraints rather than treating
+unjudged profiles as arbitrary negatives.
+
+```mermaid
+flowchart LR
+    QS[(Versioned DE/EN query specs)] --> HM[Constrained Hard-Negative Miner]
+    PS[(PlayerSeasonProfile corpus)] --> HM
+    BE[Pretrained bi-encoder] --> HM
+    HM --> TR[(Query + positive + hard + easy)]
+    TR --> FT[MultipleNegativesRankingLoss]
+    BE --> FT
+    FT --> FM[(Local fine-tuned checkpoint)]
+    BE --> EV[Before/after evaluator]
+    FM --> EV
+    GD[(Golden Dataset)] --> EV
+    TR --> EV
+    EV --> GR[Recall / MRR / nDCG]
+    EV --> HR[Hard-negative accuracy / margin]
+    EV --> LS[DE / EN stability]
+    GR & HR & LS --> AP[Explicit activation policy]
+```
+
+The miner first limits Hard Negatives to the same position group. Depending on the query contract,
+the candidate must then have a materially lower target-metric percentile, play for the wrong
+team, or be the wrong named player. Embedding similarity only chooses the hardest candidate
+inside that valid negative pool.
+
+The model checkpoint is independent of the persisted dense index. Activating it requires setting
+`SCOUTRAG_DENSE_MODEL_NAME` to the local model path and rebuilding the index; this cannot alter the
+governance rules. Phase 9 keeps the checkpoint opt-in because it improves difficult-negative
+metrics but reduces Golden MRR and nDCG@5 on the small seed.
