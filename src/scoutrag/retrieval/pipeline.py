@@ -72,6 +72,7 @@ class HybridRetrievalPipeline:
 
         return HybridRetrievalResult(
             query_profile=query_profile,
+            broad_candidates=fused,
             candidates=ranked,
             retrieval_trace=RetrievalTrace(
                 query_id=str(uuid4()),

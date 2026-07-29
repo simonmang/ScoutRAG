@@ -189,6 +189,31 @@ also stores the exact embedding model identifier and is rejected when profiles o
 Index construction latency is outside request tracing when the pipeline is kept alive; a cold CLI
 start necessarily includes lazy model loading in the first dense stage.
 
+## Phase 5 evaluation architecture
+
+Evaluation consumes the same public retrieval pipeline used by the CLI. It does not introduce a
+second ranking implementation. `HybridRetrievalResult` exposes both the broad fused pool and the
+final ranked candidates so candidate recall and ranking quality cannot be conflated.
+
+```mermaid
+flowchart LR
+    G[(Versioned Golden Dataset)] --> R[AblationRunner]
+    A[BM25] --> R
+    B[Pretrained bi-encoder] --> R
+    C[BM25 + bi-encoder] --> R
+    D[BM25 + bi-encoder + structured] --> R
+    H[Complete hybrid] --> R
+    R --> CR[Candidate Recall]
+    R --> RK[Precision / Recall / MRR / nDCG]
+    CR & RK --> Q[Per-query audit records]
+    Q --> M[Macro-averaged reports]
+```
+
+Golden judgments use a graded `1..3` relevance scale. Candidate Recall is calculated over the
+broad pool before `PlayerReranker`; Precision@K, Recall@K, MRR, and nDCG@K use the final ranking.
+Reports retain returned player IDs per query, making metric changes debuggable instead of only
+publishing one aggregate score.
+
 ## Component ports
 
 The `PipelineComponents` dependency graph exposes six independent roles:

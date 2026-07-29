@@ -65,7 +65,15 @@ TRAIT_METRICS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
         ("dribbles_completed_per_90",),
     ),
     "shooting": (
-        ("abschluss", "torgefahr", "shooting", "shots", "expected goals", "xg"),
+        (
+            "abschluss",
+            "torgefahr",
+            "torgefährlich",
+            "shooting",
+            "shots",
+            "expected goals",
+            "xg",
+        ),
         ("shots_per_90", "expected_goals_per_90"),
     ),
     "defending": (

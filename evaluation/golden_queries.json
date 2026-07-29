@@ -1,0 +1,231 @@
+{
+  "schema_version": "phase5-golden-v1",
+  "name": "ScoutRAG Bundesliga 2023/2024 retrieval seed",
+  "competition_id": 9,
+  "season_id": 281,
+  "source_reference": "statsbomb:competitions/9/seasons/281",
+  "labeling_method": "Rule-assisted manual seed: exact and team labels use typed metadata; trait labels use Phase 3 source-comparable position percentiles and were reviewed against the generated profiles.",
+  "limitations": [
+    "This is a small portfolio seed, not an independent multi-annotator relevance study.",
+    "The source partition contains Bayer Leverkusen's full season while opponent teams, including Bayern Munich, have partial match coverage.",
+    "Bayern queries therefore evaluate identity, team, position, and lexical recall rather than full-season statistical superiority.",
+    "Unlisted players are treated as non-relevant for the current seed and may be revised in later dataset versions."
+  ],
+  "queries": [
+    {
+      "query_id": "exact-kimmich-de",
+      "query": "Zeige das Profil von Joshua Kimmich",
+      "language": "de",
+      "category": "exact_player_lookup",
+      "judgments": [
+        {
+          "player_id": "5579",
+          "relevance": 3,
+          "rationale": "Exact player identity match in the Bayern Munich season profiles."
+        }
+      ],
+      "notes": [
+        "Bayern-preferred exact lookup; no season-statistical claim."
+      ]
+    },
+    {
+      "query_id": "exact-neuer-en",
+      "query": "Show me the profile of Manuel Neuer",
+      "language": "en",
+      "category": "exact_player_lookup",
+      "judgments": [
+        {
+          "player_id": "5570",
+          "relevance": 3,
+          "rationale": "Exact player identity match in the Bayern Munich season profiles."
+        }
+      ],
+      "notes": [
+        "English exact-lookup coverage."
+      ]
+    },
+    {
+      "query_id": "bayern-wingers-de",
+      "query": "Finde Flügelspieler von Bayern München",
+      "language": "de",
+      "category": "team_position_discovery",
+      "judgments": [
+        {
+          "player_id": "3053",
+          "relevance": 3,
+          "rationale": "Leroy Sané is the highest-minute observed Bayern winger."
+        },
+        {
+          "player_id": "8400",
+          "relevance": 2,
+          "rationale": "Serge Gnabry has observed Bayern minutes in the winger group."
+        },
+        {
+          "player_id": "44737",
+          "relevance": 1,
+          "rationale": "Mathys Tel has observed Bayern minutes in the winger group."
+        }
+      ],
+      "notes": [
+        "Grading uses observed minutes only to order same-team position matches."
+      ]
+    },
+    {
+      "query_id": "bayern-centre-backs-de",
+      "query": "Innenverteidiger von Bayern München mit mindestens 150 Minuten",
+      "language": "de",
+      "category": "team_position_filter",
+      "judgments": [
+        {
+          "player_id": "43565",
+          "relevance": 3,
+          "rationale": "Min Jae Kim satisfies team, center-back, and minimum-minute filters."
+        },
+        {
+          "player_id": "8519",
+          "relevance": 3,
+          "rationale": "Dayotchanculle Upamecano satisfies team, center-back, and minimum-minute filters."
+        }
+      ],
+      "notes": [
+        "Tests deterministic team and minimum-minute filtering."
+      ]
+    },
+    {
+      "query_id": "pressing-six-de",
+      "query": "Pressingstarker Sechser mit mindestens 900 Minuten",
+      "language": "de",
+      "category": "structured_trait_discovery",
+      "judgments": [
+        {
+          "player_id": "28268",
+          "relevance": 3,
+          "rationale": "Exequiel Palacios has the highest source-comparable pressure percentile in the defensive-midfield group."
+        },
+        {
+          "player_id": "9195",
+          "relevance": 2,
+          "rationale": "Robert Andrich has a mid-group source-comparable pressure percentile."
+        },
+        {
+          "player_id": "3500",
+          "relevance": 1,
+          "rationale": "Granit Xhaka satisfies the hard filters but has the lowest pressure percentile in the comparison group."
+        }
+      ],
+      "notes": [
+        "Leverkusen is used because only its profiles have full-season source coverage."
+      ]
+    },
+    {
+      "query_id": "progressive-fullback-de",
+      "query": "Progressiver Außenverteidiger mit mindestens 900 Minuten",
+      "language": "de",
+      "category": "structured_trait_discovery",
+      "judgments": [
+        {
+          "player_id": "10336",
+          "relevance": 3,
+          "rationale": "Alejandro Grimaldo has the top progressive-passing percentile among eligible fullbacks and wingbacks."
+        }
+      ],
+      "notes": [
+        "Uses the documented geometric progressive-pass definition."
+      ]
+    },
+    {
+      "query_id": "ball-winning-centre-back-de",
+      "query": "Innenverteidiger mit vielen Ballgewinnen und mindestens 900 Minuten",
+      "language": "de",
+      "category": "structured_trait_discovery",
+      "judgments": [
+        {
+          "player_id": "30606",
+          "relevance": 3,
+          "rationale": "Edmond Tapsoba leads eligible center backs in ball-recovery percentile."
+        },
+        {
+          "player_id": "49337",
+          "relevance": 2,
+          "rationale": "Josip Stanišić combines a high ball-recovery percentile with the hard filters."
+        },
+        {
+          "player_id": "27133",
+          "relevance": 1,
+          "rationale": "Odilon Kossonou has a mid-group ball-recovery percentile and satisfies the filters."
+        }
+      ],
+      "notes": [
+        "Relevance uses the requested recovery-oriented metrics, not a generic defender rating."
+      ]
+    },
+    {
+      "query_id": "dribbling-ten-de",
+      "query": "Dribbelstarker Zehner mit mindestens 900 Minuten",
+      "language": "de",
+      "category": "structured_trait_discovery",
+      "judgments": [
+        {
+          "player_id": "40724",
+          "relevance": 3,
+          "rationale": "Florian Wirtz has the top eligible attacking-midfield dribble percentile."
+        },
+        {
+          "player_id": "33401",
+          "relevance": 2,
+          "rationale": "Amine Adli has the second-highest eligible attacking-midfield dribble percentile."
+        }
+      ],
+      "notes": [
+        "Minimum minutes excludes the small-sample attacking-midfield profile."
+      ]
+    },
+    {
+      "query_id": "goal-threat-ten-de",
+      "query": "Torgefährlicher Zehner mit mindestens 500 Minuten",
+      "language": "de",
+      "category": "structured_trait_discovery",
+      "judgments": [
+        {
+          "player_id": "28239",
+          "relevance": 3,
+          "rationale": "Adam Hložek has the top expected-goals percentile in the eligible attacking-midfield group."
+        },
+        {
+          "player_id": "40724",
+          "relevance": 2,
+          "rationale": "Florian Wirtz combines above-mid expected-goals and shooting evidence."
+        },
+        {
+          "player_id": "33401",
+          "relevance": 1,
+          "rationale": "Amine Adli satisfies the filters with lower graded goal-threat evidence."
+        }
+      ],
+      "notes": [
+        "Expected goals and shots are relevance signals, not predicted future goals."
+      ]
+    },
+    {
+      "query_id": "progressive-six-en",
+      "query": "Progressive defensive midfielder with at least 900 minutes",
+      "language": "en",
+      "category": "multilingual_structured_discovery",
+      "judgments": [
+        {
+          "player_id": "28268",
+          "relevance": 3,
+          "rationale": "Exequiel Palacios has the highest progressive-passing percentile in the eligible defensive-midfield group."
+        },
+        {
+          "player_id": "3500",
+          "relevance": 2,
+          "rationale": "Granit Xhaka has the second-highest progressive-passing percentile in the eligible defensive-midfield group."
+        }
+      ],
+      "notes": [
+        "English-language counterpart for multilingual retrieval coverage."
+      ]
+    }
+  ]
+}

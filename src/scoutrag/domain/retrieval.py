@@ -73,6 +73,7 @@ class HybridRetrievalResult(ScoutRAGModel):
     """LLM-free Phase 4 result before evidence governance is implemented."""
 
     query_profile: QueryProfile
+    broad_candidates: list[PlayerCandidate] = Field(default_factory=list)
     candidates: list[RankedPlayerCandidate] = Field(default_factory=list)
     retrieval_trace: RetrievalTrace
 

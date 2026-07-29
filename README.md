@@ -10,9 +10,9 @@ evidence governance. Its primary output is not free-form text: it is an auditabl
 `RecommendationEvidencePack` that can be inspected, evaluated, and optionally rendered by an
 LLM.
 
-> Project status: **Phase 4 — hybrid retrieval MVP**. Exact, structured, BM25, and multilingual
-> dense retrieval independently create a broad candidate pool. Min-max-normalized strategy scores
-> are fused with configurable weights and every candidate retains its retrieval provenance.
+> Project status: **Phase 5 — evaluated retrieval baseline**. A versioned ten-query Golden Dataset
+> now measures candidate recall and final ranking separately. Reproducible ablations compare BM25,
+> the pretrained multilingual bi-encoder, structured features, and the complete Phase 4 hybrid.
 > Cross-encoder reranking, governance implementation, and LLM generation remain separate phases.
 
 ## Why this is not a classic document RAG
@@ -124,6 +124,10 @@ Implemented:
 - min-max score normalization and configurable weighted retrieval fusion
 - broad candidate-pool orchestration, per-strategy provenance, hard filters, and stage timings
 - `scoutrag-retrieve` command-line interface
+- versioned German/English Golden Dataset with graded relevance judgments and explicit limitations
+- dependency-free Candidate Recall, Precision@K, Recall@K, MRR, and graded nDCG@K
+- reproducible A-D retrieval ablations plus the complete Phase 4 hybrid
+- auditable per-query results, macro averages, and `scoutrag-evaluate` CLI
 
 Deliberately not implemented yet:
 
@@ -132,6 +136,29 @@ Deliberately not implemented yet:
 - rule-based governance implementation
 - `/api/v1/retrieve`, `/api/v1/answer`, or `/api/v1/search`
 - dashboard and LLM generation
+
+## Phase 5 retrieval evaluation
+
+Run the committed Golden Dataset against every baseline:
+
+```powershell
+scoutrag-evaluate --local-files-only --summary-only
+```
+
+Validated local result on 10 queries and 21 positive graded judgments:
+
+| Variant | Candidate Recall | MRR | Precision@1 | Recall@5 | nDCG@5 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| A: BM25 | 1.000 | 0.950 | 0.900 | 1.000 | 0.847916 |
+| B: pretrained bi-encoder | 1.000 | 1.000 | 1.000 | 1.000 | 0.877445 |
+| C: BM25 + bi-encoder | 1.000 | 1.000 | 1.000 | 1.000 | 0.876800 |
+| D: C + structured features | 1.000 | 1.000 | 1.000 | 1.000 | 0.892273 |
+| H: complete Phase 4 hybrid | 1.000 | 1.000 | 1.000 | 1.000 | **0.900637** |
+
+The Golden Dataset deliberately uses Bayern for exact, team, and position queries. Trait
+judgments use only source-covered comparison groups. Candidate Recall is saturated on this small
+seed because hard filters and a pool of 40 make recall comparatively easy; it is not evidence of
+generalized production accuracy. See [evaluation methodology](evaluation/README.md).
 
 ## Phase 4 hybrid retrieval
 
@@ -312,6 +339,7 @@ src/scoutrag/
 ├── domain/         # typed, framework-independent football and evidence models
 ├── ports/          # interfaces for every replaceable pipeline role
 ├── retrieval/      # query analysis, four retrievers, fusion, trace, and CLI
+├── evaluation/     # golden data, IR metrics, ablations, reports, and CLI
 ├── config.py
 ├── logging.py
 └── main.py
@@ -332,7 +360,7 @@ docs/
 2. ✅ Data pipeline and validated season-specific StatsBomb evidence
 3. ✅ Per-90 features, refined position groups, percentiles, profile text, and metric definitions
 4. ✅ Exact, structured, BM25, and multilingual bi-encoder retrieval with normalized fusion
-5. Golden retrieval dataset, candidate metrics, and ablation studies
+5. ✅ Golden retrieval dataset, candidate metrics, and ablation studies
 6. Cross-encoder reranking and optional ONNX inference
 7. Rule-based evidence governance with false-recommendation evaluation
 8. Retrieve/answer/search APIs and explainability dashboard

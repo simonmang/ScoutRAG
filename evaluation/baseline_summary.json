@@ -1,0 +1,52 @@
+{
+  "schema_version": "phase5-baseline-v1",
+  "dataset_version": "phase5-golden-v1",
+  "profile_count": 373,
+  "query_count": 10,
+  "positive_judgment_count": 21,
+  "candidate_pool_size": 40,
+  "dense_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "metrics": {
+    "A_bm25": {
+      "candidate_recall": 1.0,
+      "mean_reciprocal_rank": 0.95,
+      "precision_at_1": 0.9,
+      "recall_at_5": 1.0,
+      "ndcg_at_5": 0.847916
+    },
+    "B_pretrained_bi_encoder": {
+      "candidate_recall": 1.0,
+      "mean_reciprocal_rank": 1.0,
+      "precision_at_1": 1.0,
+      "recall_at_5": 1.0,
+      "ndcg_at_5": 0.877445
+    },
+    "C_bm25_plus_bi_encoder": {
+      "candidate_recall": 1.0,
+      "mean_reciprocal_rank": 1.0,
+      "precision_at_1": 1.0,
+      "recall_at_5": 1.0,
+      "ndcg_at_5": 0.8768
+    },
+    "D_bm25_bi_encoder_structured": {
+      "candidate_recall": 1.0,
+      "mean_reciprocal_rank": 1.0,
+      "precision_at_1": 1.0,
+      "recall_at_5": 1.0,
+      "ndcg_at_5": 0.892273
+    },
+    "H_full_phase4_hybrid": {
+      "candidate_recall": 1.0,
+      "mean_reciprocal_rank": 1.0,
+      "precision_at_1": 1.0,
+      "recall_at_5": 1.0,
+      "ndcg_at_5": 0.900637
+    }
+  },
+  "limitations": [
+    "Small rule-assisted seed with ten queries rather than an independent multi-annotator study.",
+    "Candidate Recall is saturated by hard filters and the broad pool.",
+    "Bayern Munich opponent profiles have partial match coverage.",
+    "This summary is a regression baseline, not a production-accuracy claim."
+  ]
+}
