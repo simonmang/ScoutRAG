@@ -1,0 +1,20 @@
+{
+  "valid": true,
+  "competition_id": 9,
+  "season_id": 281,
+  "match_count": 34,
+  "event_count": 137765,
+  "participation_count": 1049,
+  "profile_count": 373,
+  "evidence_count": 11563,
+  "metric_definition_count": 13,
+  "percentile_profile_count": 15,
+  "feature_version": "phase3-v1",
+  "errors": [],
+  "warnings": [
+    "152 profiles contain fewer than 90 observed minutes; governance must treat them as limited evidence.",
+    "4 player-season profiles aggregate explicitly across multiple teams; team_names preserves transfer provenance.",
+    "Uneven team coverage detected (maximum 34, median 2 matches); profiles reflect available source coverage, not a complete league season.",
+    "358 profiles intentionally have no percentile because minutes, source coverage, or comparison-group size is insufficient."
+  ]
+}

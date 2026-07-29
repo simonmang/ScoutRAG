@@ -1,7 +1,15 @@
 # ScoutRAG data workspace
 
-Downloaded StatsBomb Open Data and generated Parquet datasets are intentionally excluded from
+Raw StatsBomb Open Data and large intermediate Parquet datasets are intentionally excluded from
 Git. This keeps the repository small and makes every artifact reproducible from source.
+
+Two compact derived artifacts are committed for the portfolio demo:
+
+- `player_season_profiles.parquet` — 373 typed profiles, 68,786 bytes
+- `player_metric_evidence.parquet` — 11,563 source-linked records, 98,010 bytes
+
+The matching `manifest.json` and `validation_report.json` are committed alongside them. Raw
+events, match records, minute intervals, dense embeddings, and downloaded models remain ignored.
 
 ```text
 data/
@@ -32,3 +40,6 @@ after changing the player profiles or embedding model:
 ```powershell
 scoutrag-retrieve "Zeige das Profil von Joshua Kimmich" --rebuild-dense-index
 ```
+
+The Docker and Render demo explicitly disable dense retrieval, so the committed snapshot is
+enough to run exact, structured, and BM25 retrieval plus governance without network access.

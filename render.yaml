@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: scoutrag-demo
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: off
+    envVars:
+      - key: SCOUTRAG_ANSWER_MODE
+        value: template
+      - key: SCOUTRAG_ENABLE_DENSE_RETRIEVAL
+        value: "false"
+      - key: SCOUTRAG_ENVIRONMENT
+        value: production
+      - key: SCOUTRAG_LOCAL_FILES_ONLY
+        value: "true"

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scoutrag"
-version = "0.10.0"
+version = "1.0.0"
 description = "Evidence-based, multi-stage retrieval architecture for football scouting"
 readme = "README.md"
 requires-python = ">=3.11"

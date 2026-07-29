@@ -34,6 +34,8 @@ uvicorn scoutrag.main:app
 ```
 
 Set `SCOUTRAG_ENABLE_DENSE_RETRIEVAL=false` for a model-free exact, structured, and BM25 run.
+The repository includes the compact artifacts required for this mode. For the production-style
+container and one-click Blueprint, see [the deployment guide](deployment.md).
 
 ## Retrieve a complete Evidence Pack
 

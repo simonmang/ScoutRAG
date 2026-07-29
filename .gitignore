@@ -15,8 +15,14 @@ evaluation/results/*
 models/*
 !models/.gitkeep
 
-# Downloaded and generated football data (keep directory documentation only)
+# Downloaded and generated football data (except the compact portfolio demo snapshot)
 data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+!data/processed/bundesliga-2023-2024/
+data/processed/bundesliga-2023-2024/*
+!data/processed/bundesliga-2023-2024/manifest.json
+!data/processed/bundesliga-2023-2024/player_metric_evidence.parquet
+!data/processed/bundesliga-2023-2024/player_season_profiles.parquet
+!data/processed/bundesliga-2023-2024/validation_report.json

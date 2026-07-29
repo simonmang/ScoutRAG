@@ -268,7 +268,7 @@ def test_dashboard_assets_and_openapi_are_exposed(client: TestClient) -> None:
     assert dashboard.status_code == 200
     assert "Evidence before eloquence" in dashboard.text
     assert "Recommendation Evidence Pack" in dashboard.text
-    assert "Phase 10" in dashboard.text
+    assert "Release 1.0" in dashboard.text
     assert css.status_code == 200
     assert "--green: #b8ed73" in css.text
     assert javascript.status_code == 200

@@ -17,10 +17,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -39,3 +39,39 @@ jobs:
 
       - name: Test
         run: pytest --cov=scoutrag --cov-report=term-missing
+
+  container:
+    needs: quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Build portfolio image
+        run: docker build --tag scoutrag:ci .
+
+      - name: Start portfolio image
+        run: docker run --detach --name scoutrag-demo --publish 8000:8000 scoutrag:ci
+
+      - name: Verify health, dashboard, and retrieval
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8000/health; then
+              break
+            fi
+            if [ "$attempt" = 30 ]; then
+              docker logs scoutrag-demo
+              exit 1
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8000/ | grep "Recommendation Evidence Pack"
+          curl --fail --silent \
+            --header "Content-Type: application/json" \
+            --data '{"query":"Zeige das Profil von Joshua Kimmich","result_count":3}' \
+            http://127.0.0.1:8000/api/v1/retrieve | grep "Joshua Kimmich"
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker logs scoutrag-demo

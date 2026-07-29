@@ -1,6 +1,8 @@
 # ScoutRAG
 
 [![CI](https://github.com/simonmang/ScoutRAG/actions/workflows/ci.yml/badge.svg)](https://github.com/simonmang/ScoutRAG/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/simonmang/ScoutRAG)](https://github.com/simonmang/ScoutRAG/releases)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/simonmang/ScoutRAG)
 
 **Evidence-based, multi-stage retrieval for football scouting.**
 
@@ -10,10 +12,27 @@ evidence governance. Its primary output is not free-form text: it is an auditabl
 `RecommendationEvidencePack` that can be inspected, evaluated, and optionally rendered by an
 LLM.
 
-> Project status: **Phase 10 — grounded answer generation**. Optional schema-constrained model
-> output is gated by governance, restricted to a source-linked fact allowlist, and checked by a
-> deterministic groundedness validator. Unsafe drafts fall back to the LLM-free template instead
-> of reaching the API.
+> Project status: **1.0 — portfolio-ready**. All ten planned architecture phases are implemented.
+> A compact source-attributed data snapshot, model-free Docker image, container smoke test, and
+> Render Blueprint make the complete API and dashboard independently demonstrable.
+
+## Try the portfolio demo
+
+No embedding download or API key is required:
+
+```powershell
+docker build --tag scoutrag:1.0.0 .
+docker run --rm --publish 8000:8000 scoutrag:1.0.0
+```
+
+Then open `http://127.0.0.1:8000` or use the Deploy to Render button above. The demo keeps exact,
+structured, and BM25 retrieval, fusion, governance, traces, safe answers, and the dashboard active.
+Dense retrieval and model-backed generation remain opt-in.
+
+The committed snapshot has 373 Bundesliga 2023/2024 player profiles and 11,563 metric records.
+Bayern Munich is preferred in the interface, but its source partition covers only two matches;
+ScoutRAG therefore reports those examples as limited instead of overstating the evidence. See the
+[deployment guide](docs/deployment.md) and [data notes](data/README.md).
 
 ## Why this is not a classic document RAG
 
@@ -160,6 +179,9 @@ Implemented:
 - safe template fallback with visible validation violations and generation mode
 - optional OpenAI Responses API adapter behind a vendor-neutral backend port
 - versioned hallucination cases, Groundedness metrics, and `scoutrag-answer-evaluate` CLI
+- compact validated demo artifacts with source manifest and coverage report
+- non-root production Docker image and one-click Render Blueprint
+- container smoke test covering health, dashboard, and real Kimmich retrieval
 
 Deliberately not implemented yet:
 
