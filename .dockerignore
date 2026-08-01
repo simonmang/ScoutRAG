@@ -14,9 +14,7 @@ evaluation/results
 models
 data/raw
 data/processed/*
-!data/processed/bundesliga-2023-2024
-data/processed/bundesliga-2023-2024/*
-!data/processed/bundesliga-2023-2024/manifest.json
-!data/processed/bundesliga-2023-2024/player_metric_evidence.parquet
-!data/processed/bundesliga-2023-2024/player_season_profiles.parquet
-!data/processed/bundesliga-2023-2024/validation_report.json
+!data/processed/synthetic-ci-fixture
+data/processed/synthetic-ci-fixture/*
+!data/processed/synthetic-ci-fixture/player_season_profiles.parquet
+!data/processed/synthetic-ci-fixture/player_metric_evidence.parquet

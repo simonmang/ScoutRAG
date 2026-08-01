@@ -15,10 +15,13 @@ RUN addgroup --system scoutrag \
 
 COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
-COPY data/processed/bundesliga-2023-2024/player_season_profiles.parquet \
-    data/processed/bundesliga-2023-2024/player_season_profiles.parquet
-COPY data/processed/bundesliga-2023-2024/player_metric_evidence.parquet \
-    data/processed/bundesliga-2023-2024/player_metric_evidence.parquet
+COPY data/processed/synthetic-ci-fixture/player_season_profiles.parquet \
+    data/processed/synthetic-ci-fixture/player_season_profiles.parquet
+COPY data/processed/synthetic-ci-fixture/player_metric_evidence.parquet \
+    data/processed/synthetic-ci-fixture/player_metric_evidence.parquet
+
+ENV SCOUTRAG_PROFILES_PATH=data/processed/synthetic-ci-fixture/player_season_profiles.parquet \
+    SCOUTRAG_METRIC_EVIDENCE_PATH=data/processed/synthetic-ci-fixture/player_metric_evidence.parquet
 
 RUN python -m pip install --no-cache-dir .
 

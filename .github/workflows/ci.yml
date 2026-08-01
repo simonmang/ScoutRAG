@@ -69,8 +69,8 @@ jobs:
           curl --fail --silent http://127.0.0.1:8000/ | grep "Recommendation Evidence Pack"
           curl --fail --silent \
             --header "Content-Type: application/json" \
-            --data '{"query":"Zeige das Profil von Joshua Kimmich","result_count":3}' \
-            http://127.0.0.1:8000/api/v1/retrieve | grep "Joshua Kimmich"
+            --data '{"query":"Show the profile of Alex Musterfeld","result_count":3}' \
+            http://127.0.0.1:8000/api/v1/retrieve | grep "Alex Musterfeld"
 
       - name: Show container logs on failure
         if: failure()

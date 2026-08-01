@@ -1,7 +1,10 @@
-"""The committed model-free snapshot must serve a real Bayern demo query."""
+"""The committed synthetic CI/Docker fixture must serve a real governed lookup.
 
-import hashlib
-import json
+This fixture is entirely invented (see scripts/build_synthetic_ci_fixture.py) so it can be
+committed and baked into a public Docker image without redistributing any licensed provider
+data. It exists only to prove the packaged application works end to end, not as a demo dataset.
+"""
+
 from pathlib import Path
 
 from scoutrag.domain.evidence import EvidenceVerdict
@@ -9,33 +12,23 @@ from scoutrag.governance.evidence import load_metric_evidence
 from scoutrag.governance.factory import build_governed_pipeline
 from scoutrag.retrieval.common import load_profiles
 
-SNAPSHOT_ROOT = Path("data/processed/bundesliga-2023-2024")
+FIXTURE_ROOT = Path("data/processed/synthetic-ci-fixture")
 
 
-def test_portfolio_snapshot_serves_governed_kimmich_lookup() -> None:
-    manifest = json.loads((SNAPSHOT_ROOT / "manifest.json").read_text(encoding="utf-8"))
-    for artifact_name in (
-        "player_season_profiles.parquet",
-        "player_metric_evidence.parquet",
-    ):
-        digest = hashlib.sha256((SNAPSHOT_ROOT / artifact_name).read_bytes()).hexdigest()
-        assert digest == manifest["artifacts"][artifact_name]["sha256"]
+def test_synthetic_ci_fixture_serves_governed_lookup() -> None:
+    profiles = load_profiles(FIXTURE_ROOT / "player_season_profiles.parquet")
+    evidence = load_metric_evidence(FIXTURE_ROOT / "player_metric_evidence.parquet")
 
-    profiles = load_profiles(SNAPSHOT_ROOT / "player_season_profiles.parquet")
-    evidence = load_metric_evidence(SNAPSHOT_ROOT / "player_metric_evidence.parquet")
-
-    assert len(profiles) == 373
-    assert len(evidence) == 11_563
-    kimmich = next(profile for profile in profiles if profile.player_id == "5579")
-    assert kimmich.player_name == "Joshua Kimmich"
-    assert kimmich.team_name == "Bayern Munich"
-    assert kimmich.structured_features["source_coverage_ratio"] == 0.0588
+    assert len(profiles) == 3
+    musterfeld = next(profile for profile in profiles if profile.player_id == "synthetic:1")
+    assert musterfeld.player_name == "Alex Musterfeld"
+    assert musterfeld.team_name == "FC Beispielhausen"
 
     pack = build_governed_pipeline(profiles, evidence).search(
-        "Zeige das Profil von Joshua Kimmich",
+        "Show the profile of Alex Musterfeld",
         result_count=3,
     )
 
-    assert pack.candidates[0].profile.player_id == "5579"
+    assert pack.candidates[0].profile.player_id == "synthetic:1"
     assert pack.governance.verdict is EvidenceVerdict.LIMITED
     assert pack.retrieval_trace.strategies_used == ["exact", "sparse"]
