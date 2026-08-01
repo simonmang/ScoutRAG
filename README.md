@@ -354,7 +354,7 @@ See the [API and dashboard guide](docs/api.md) for request examples and local co
 Produce a governed Evidence Pack without an LLM:
 
 ```powershell
-scoutrag-govern "Zeige das Profil von Aleksandar Pavlović" --local-files-only
+scoutrag-govern "Zeige das Profil von Wisdom Mike" --local-files-only
 ```
 
 Run the seven committed safety cases:
@@ -363,7 +363,7 @@ Run the seven committed safety cases:
 scoutrag-govern-evaluate --local-files-only
 ```
 
-Validated local result over 373 profiles and 11,563 metric-evidence records:
+Validated local result over 12,713 profiles and 477,131 metric-evidence records:
 
 | Safety metric | Result |
 | --- | ---: |
@@ -376,13 +376,13 @@ Validated local result over 373 profiles and 11,563 metric-evidence records:
 | Coverage | 0.285714 |
 
 Coverage is intentionally low because five of seven cases are designed to require abstention.
-The cases include a missing requested metric, no matching player, unknown competition,
-unsupported prediction, conflicting seasons, a source-covered ranking, and a partial Bayern
-profile.
+The cases include a missing requested metric, an impossible minutes filter, an unrecognized
+competition alias, an unsupported prediction, conflicting season filters, a source-covered
+ranking, and a low-minutes academy profile.
 
-For Aleksandar Pavlović, exact identity retrieval is supported but the verdict is `LIMITED`
-because the open-data Bayern sample has low source coverage and limited observed minutes.
-The score is reported as `Evidence Quality Score: 0.812`, never as an 81.2% correctness
+For Wisdom Mike (Bayern Munich academy forward, 37 minutes in 2025/2026), exact identity
+retrieval is supported but the verdict is `LIMITED` because of the low minute sample.
+The score is reported as `Evidence Quality Score: 0.878`, never as an 87.8% correctness
 probability.
 
 See the [machine-readable Phase 7 summary](evaluation/governance_summary.json), the
@@ -443,20 +443,23 @@ Run the committed Golden Dataset against every baseline:
 scoutrag-evaluate --local-files-only --summary-only
 ```
 
-Validated local result on 10 queries and 21 positive graded judgments:
+Validated local result on 8 queries against the 12,713-profile combined dataset:
 
 | Variant | Candidate Recall | MRR | Precision@1 | Recall@5 | nDCG@5 |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| A: BM25 | 1.000 | 0.950 | 0.900 | 1.000 | 0.847916 |
-| B: pretrained bi-encoder | 1.000 | 1.000 | 1.000 | 1.000 | 0.877445 |
-| C: BM25 + bi-encoder | 1.000 | 1.000 | 1.000 | 1.000 | 0.876800 |
-| D: C + structured features | 1.000 | 1.000 | 1.000 | 1.000 | 0.892273 |
-| H: complete Phase 4 hybrid | 1.000 | 1.000 | 1.000 | 1.000 | **0.900637** |
+| A: BM25 | 0.958 | 0.625 | 0.500 | 0.708 | 0.633 |
+| B: pretrained bi-encoder | 0.875 | 0.625 | 0.500 | 0.667 | 0.619 |
+| C: BM25 + bi-encoder | 0.875 | 0.719 | 0.625 | 0.729 | 0.635 |
+| D: C + structured features | 1.000 | 0.728 | 0.625 | 0.792 | 0.703 |
+| H: complete Phase 4 hybrid | 1.000 | 0.838 | 0.750 | 0.917 | **0.807** |
 
-The Golden Dataset deliberately uses Bayern for exact, team, and position queries. Trait
-judgments use only source-covered comparison groups. Candidate Recall is saturated on this small
-seed because hard filters and a pool of 40 make recall comparatively easy; it is not evidence of
-generalized production accuracy. See [evaluation methodology](evaluation/README.md).
+The Golden Dataset uses Bayern Munich for exact, team, and position queries, and Bundesliga-wide
+trait rankings scoped to one competition (position-group percentiles are computed per
+competition, so an unscoped query across all 24 leagues produces many tied top scores). Metrics
+are visibly lower than the earlier 373-profile StatsBomb seed's saturated 1.000s — expected at
+this larger, more realistic scale, and each added retrieval strategy still measurably improves
+MRR and nDCG@5, which is the actual claim this ablation makes. See
+[evaluation methodology](evaluation/README.md).
 
 ## Phase 4 hybrid retrieval
 

@@ -1,52 +1,52 @@
 {
-  "schema_version": "phase5-baseline-v1",
-  "dataset_version": "phase5-golden-v1",
-  "profile_count": 373,
-  "query_count": 10,
-  "positive_judgment_count": 21,
+  "schema_version": "phase5-baseline-v2",
+  "dataset_version": "phase5-golden-v2",
+  "profile_count": 12713,
+  "query_count": 8,
+  "positive_judgment_count": 18,
   "candidate_pool_size": 40,
   "dense_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
   "metrics": {
     "A_bm25": {
-      "candidate_recall": 1.0,
-      "mean_reciprocal_rank": 0.95,
-      "precision_at_1": 0.9,
-      "recall_at_5": 1.0,
-      "ndcg_at_5": 0.847916
+      "candidate_recall": 0.958333,
+      "mean_reciprocal_rank": 0.625,
+      "precision_at_1": 0.5,
+      "recall_at_5": 0.708333,
+      "ndcg_at_5": 0.632551
     },
     "B_pretrained_bi_encoder": {
-      "candidate_recall": 1.0,
-      "mean_reciprocal_rank": 1.0,
-      "precision_at_1": 1.0,
-      "recall_at_5": 1.0,
-      "ndcg_at_5": 0.877445
+      "candidate_recall": 0.875,
+      "mean_reciprocal_rank": 0.625,
+      "precision_at_1": 0.5,
+      "recall_at_5": 0.666667,
+      "ndcg_at_5": 0.619295
     },
     "C_bm25_plus_bi_encoder": {
-      "candidate_recall": 1.0,
-      "mean_reciprocal_rank": 1.0,
-      "precision_at_1": 1.0,
-      "recall_at_5": 1.0,
-      "ndcg_at_5": 0.8768
+      "candidate_recall": 0.875,
+      "mean_reciprocal_rank": 0.71875,
+      "precision_at_1": 0.625,
+      "recall_at_5": 0.729167,
+      "ndcg_at_5": 0.634745
     },
     "D_bm25_bi_encoder_structured": {
       "candidate_recall": 1.0,
-      "mean_reciprocal_rank": 1.0,
-      "precision_at_1": 1.0,
-      "recall_at_5": 1.0,
-      "ndcg_at_5": 0.892273
+      "mean_reciprocal_rank": 0.728125,
+      "precision_at_1": 0.625,
+      "recall_at_5": 0.791667,
+      "ndcg_at_5": 0.702785
     },
     "H_full_phase4_hybrid": {
       "candidate_recall": 1.0,
-      "mean_reciprocal_rank": 1.0,
-      "precision_at_1": 1.0,
-      "recall_at_5": 1.0,
-      "ndcg_at_5": 0.900637
+      "mean_reciprocal_rank": 0.8375,
+      "precision_at_1": 0.75,
+      "recall_at_5": 0.916667,
+      "ndcg_at_5": 0.807192
     }
   },
   "limitations": [
-    "Small rule-assisted seed with ten queries rather than an independent multi-annotator study.",
-    "Candidate Recall is saturated by hard filters and the broad pool.",
-    "Bayern Munich opponent profiles have partial match coverage.",
+    "Small rule-assisted seed with eight queries rather than an independent multi-annotator study.",
+    "position_group percentiles are computed per competition, so trait queries here are scoped to Bayern Munich or to the Bundesliga to keep the comparison group well-defined.",
+    "Metrics are visibly lower than the earlier 373-profile StatsBomb seed's saturated 1.000s at this larger, more realistic 12,713-profile scale.",
     "This summary is a regression baseline, not a production-accuracy claim."
   ]
 }

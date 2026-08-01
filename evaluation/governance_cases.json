@@ -1,33 +1,33 @@
 {
-  "schema_version": "phase7-governance-v1",
+  "schema_version": "phase7-governance-v2",
   "cases": [
     {
       "case_id": "missing-requested-metric",
       "query": "Kreativer Zehner mit vielen Expected Assists",
       "expected_verdict": "insufficient",
       "should_abstain": true,
-      "rationale": "Expected assists are not available in the current feature contract."
+      "rationale": "Expected assists are not available in API-Football's feature contract (no xA field), same as the previous StatsBomb-scoped case."
     },
     {
-      "case_id": "limited-bayern-profile",
-      "query": "Zeige das Profil von Aleksandar Pavlović",
+      "case_id": "limited-low-minutes-profile",
+      "query": "Zeige das Profil von Wisdom Mike",
       "expected_verdict": "limited",
       "should_abstain": false,
-      "rationale": "Exact identity is supported, but the open-data Bayern sample is partial."
+      "rationale": "Exact identity is supported, but Wisdom Mike (Bayern Munich academy forward) has only 37 minutes and data_quality 0.508 in 2025/2026."
     },
     {
       "case_id": "filters-return-no-player",
-      "query": "Top 10 pressingstarke Sechser von Bayern München mit mindestens 5000 Minuten",
+      "query": "Top 10 dribbelstarke Sechser von Bayern München mit mindestens 5000 Minuten",
       "expected_verdict": "insufficient",
       "should_abstain": true,
-      "rationale": "No player satisfies the explicit minute threshold."
+      "rationale": "No player satisfies the explicit 5000-minute threshold; a season has at most roughly 3,420 available minutes."
     },
     {
-      "case_id": "unknown-competition",
-      "query": "Pressingstarker Sechser in der Premier League",
+      "case_id": "unrecognized-competition-alias",
+      "query": "Ballgewinnstarker Sechser in der Major League Soccer",
       "expected_verdict": "insufficient",
       "should_abstain": true,
-      "rationale": "The loaded dataset contains no Premier League player profiles."
+      "rationale": "\"Major League Soccer\" is not in COMPETITION_ALIASES, so the filter is silently not extracted and the query falls back to an unscoped ball-winning search across all 24 leagues, which cannot support a reliable ranking. This documents a real, current gap (COMPETITION_ALIASES only covers 5 of the 24 tracked leagues) rather than a clean 'unknown competition' rejection."
     },
     {
       "case_id": "unsupported-prediction",
@@ -38,17 +38,17 @@
     },
     {
       "case_id": "conflicting-seasons",
-      "query": "Top 10 pressingstarke Sechser 2022/2023 und 2023/2024",
+      "query": "Top 10 dribbelstarke Zehner 2024/2025 und 2025/2026",
       "expected_verdict": "conflicting",
       "should_abstain": true,
-      "rationale": "One ranking must not silently combine contradictory season filters."
+      "rationale": "2024/2025 and 2025/2026 are both real, separately built artifacts; one ranking must not silently combine two season filters."
     },
     {
       "case_id": "source-covered-trait-ranking",
-      "query": "Top 3 torgefährliche Zehner mit mindestens 900 Minuten",
+      "query": "Top 3 dribbelstarke Zehner in der Bundesliga mit mindestens 900 Minuten",
       "expected_verdict": "sufficient",
       "should_abstain": false,
-      "rationale": "Source-covered profiles provide requested metrics and comparison percentiles."
+      "rationale": "Scoped to one competition, source-covered attacking_midfield profiles provide the requested dribbles_completed_per_90 trait and comparison percentiles. A shooting-trait query for the same players instead comes back INSUFFICIENT: that trait also requires expected_goals_per_90, which is entirely unavailable in API-Football's feature set, so the system correctly refuses to claim full trait coverage even though shots_per_90 alone would be enough to rank."
     }
   ]
 }

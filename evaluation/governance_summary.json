@@ -1,8 +1,8 @@
 {
-  "schema_version": "phase7-governance-summary-v1",
-  "dataset_version": "phase7-governance-v1",
-  "profile_count": 373,
-  "metric_evidence_count": 11563,
+  "schema_version": "phase7-governance-summary-v2",
+  "dataset_version": "phase7-governance-v2",
+  "profile_count": 12713,
+  "metric_evidence_count": 477131,
   "case_count": 7,
   "retrieval_configuration": [
     "exact",
@@ -26,10 +26,10 @@
     "conflicting": 1,
     "out_of_scope": 1
   },
-  "bayern_case": {
-    "query": "Zeige das Profil von Aleksandar Pavlović",
+  "limited_case": {
+    "query": "Zeige das Profil von Wisdom Mike",
     "verdict": "limited",
-    "evidence_quality_score": 0.812,
+    "evidence_quality_score": 0.878,
     "warnings": [
       "Source data coverage is limited.",
       "At least one leading candidate has a limited minute sample."

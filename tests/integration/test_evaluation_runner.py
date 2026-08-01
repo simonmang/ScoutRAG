@@ -43,8 +43,8 @@ def player(player_id: str, name: str, team: str) -> PlayerSeasonProfile:
 def test_committed_golden_dataset_is_valid_and_versioned() -> None:
     dataset = load_golden_dataset(PROJECT_ROOT / "evaluation" / "golden_queries.json")
 
-    assert dataset.schema_version == "phase5-golden-v1"
-    assert len(dataset.queries) == 10
+    assert dataset.schema_version == "phase5-golden-v2"
+    assert len(dataset.queries) == 8
     assert {query.language for query in dataset.queries} == {"de", "en"}
     assert any("Bayern" in query.query for query in dataset.queries)
 
@@ -53,7 +53,7 @@ def test_committed_golden_dataset_is_valid_and_versioned() -> None:
     )
     assert baseline["dataset_version"] == dataset.schema_version
     assert baseline["query_count"] == len(dataset.queries)
-    assert baseline["metrics"]["H_full_phase4_hybrid"]["ndcg_at_5"] == 0.900637
+    assert baseline["metrics"]["H_full_phase4_hybrid"]["ndcg_at_5"] == 0.807192
 
 
 def test_ablation_runner_compares_all_phase5_variants(tmp_path: Path) -> None:

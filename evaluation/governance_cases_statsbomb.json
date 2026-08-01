@@ -1,0 +1,54 @@
+{
+  "schema_version": "phase7-governance-v1",
+  "cases": [
+    {
+      "case_id": "missing-requested-metric",
+      "query": "Kreativer Zehner mit vielen Expected Assists",
+      "expected_verdict": "insufficient",
+      "should_abstain": true,
+      "rationale": "Expected assists are not available in the current feature contract."
+    },
+    {
+      "case_id": "limited-bayern-profile",
+      "query": "Zeige das Profil von Aleksandar Pavlović",
+      "expected_verdict": "limited",
+      "should_abstain": false,
+      "rationale": "Exact identity is supported, but the open-data Bayern sample is partial."
+    },
+    {
+      "case_id": "filters-return-no-player",
+      "query": "Top 10 pressingstarke Sechser von Bayern München mit mindestens 5000 Minuten",
+      "expected_verdict": "insufficient",
+      "should_abstain": true,
+      "rationale": "No player satisfies the explicit minute threshold."
+    },
+    {
+      "case_id": "unknown-competition",
+      "query": "Pressingstarker Sechser in der Premier League",
+      "expected_verdict": "insufficient",
+      "should_abstain": true,
+      "rationale": "The loaded dataset contains no Premier League player profiles."
+    },
+    {
+      "case_id": "unsupported-prediction",
+      "query": "Wer gewinnt die nächste Weltmeisterschaft?",
+      "expected_verdict": "out_of_scope",
+      "should_abstain": true,
+      "rationale": "ScoutRAG retrieves player evidence and does not predict tournament winners."
+    },
+    {
+      "case_id": "conflicting-seasons",
+      "query": "Top 10 pressingstarke Sechser 2022/2023 und 2023/2024",
+      "expected_verdict": "conflicting",
+      "should_abstain": true,
+      "rationale": "One ranking must not silently combine contradictory season filters."
+    },
+    {
+      "case_id": "source-covered-trait-ranking",
+      "query": "Top 3 torgefährliche Zehner mit mindestens 900 Minuten",
+      "expected_verdict": "sufficient",
+      "should_abstain": false,
+      "rationale": "Source-covered profiles provide requested metrics and comparison percentiles."
+    }
+  ]
+}
