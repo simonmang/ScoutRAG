@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="ScoutRAG — evidenzbasierte, nachvollziehbare Fußball-Spielersuche."
+      content="ScoutRAG — evidence-based, auditable football player search."
     />
     <title>ScoutRAG — Evidence Console</title>
     <link rel="stylesheet" href="/assets/styles.css" />
@@ -16,7 +16,7 @@
     <div class="ambient ambient-two" aria-hidden="true"></div>
 
     <header class="site-header">
-      <a class="brand" href="/" aria-label="ScoutRAG Startseite">
+      <a class="brand" href="/" aria-label="ScoutRAG home">
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 48 48" role="img">
             <path d="M8 10h32v7H8zM8 21h21v7H8zM8 32h32v7H8z"></path>
@@ -28,8 +28,8 @@
           <small>Evidence Console</small>
         </span>
       </a>
-      <nav class="header-nav" aria-label="Hauptnavigation">
-        <a href="#search">Suche</a>
+      <nav class="header-nav" aria-label="Main navigation">
+        <a href="#search">Search</a>
         <a href="#explainability">Explainability</a>
         <a href="/docs">API Docs</a>
       </nav>
@@ -43,17 +43,17 @@
       <section class="hero" id="search">
         <div class="hero-copy">
           <p class="eyebrow"><span>Release 1.0</span> Evidence before eloquence</p>
-          <h1>Scouting, das seine <em>Belege zeigt.</em></h1>
+          <h1>Scouting that <em>shows its evidence.</em></h1>
           <p class="hero-description">
-            Kombiniere exakte Suche, strukturierte Statistiken, BM25 und semantisches
-            Retrieval. ScoutRAG trennt Relevanz von Evidenzqualität und sagt auch,
-            wann eine Empfehlung nicht belastbar ist.
+            Combines exact search, structured statistics, BM25, and semantic retrieval.
+            ScoutRAG separates relevance from evidence quality and states plainly when a
+            recommendation is not well-supported.
           </p>
         </div>
 
         <div class="search-shell">
           <form id="search-form" class="search-form">
-            <label for="query-input">Scouting-Anfrage</label>
+            <label for="query-input">Scouting query</label>
             <div class="search-row">
               <div class="query-field">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -65,66 +65,66 @@
                   name="query"
                   type="text"
                   maxlength="500"
-                  value="Zeige das Profil von Joshua Kimmich"
+                  value="Show the profile of Joshua Kimmich"
                   autocomplete="off"
                   required
                 />
               </div>
-              <select id="result-count" aria-label="Anzahl Ergebnisse">
+              <select id="result-count" aria-label="Number of results">
                 <option value="3">Top 3</option>
                 <option value="5">Top 5</option>
                 <option value="10" selected>Top 10</option>
               </select>
               <button class="primary-button" type="submit">
-                <span>Analysieren</span>
+                <span>Analyze</span>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M5 12h14M13 6l6 6-6 6"></path>
                 </svg>
               </button>
             </div>
           </form>
-          <div class="examples" aria-label="Beispielanfragen">
-            <span>Beispiele</span>
+          <div class="examples" aria-label="Example queries">
+            <span>Examples</span>
             <button
               type="button"
-              data-example="Top 3 torgefährliche Zehner mit mindestens 900 Minuten"
+              data-example="Top 3 goal-threatening attacking midfielders with at least 900 minutes"
             >
-              Torgefährliche Zehner
+              Goal-threatening attacking mids
             </button>
             <button
               type="button"
-              data-example="Pressingstarker Sechser von Bayern München"
+              data-example="Pressing-heavy defensive midfielder from Bayern Munich"
             >
-              Bayern-Sechser
+              Bayern defensive mids
             </button>
             <button
               type="button"
-              data-example="Wer gewinnt die nächste Weltmeisterschaft?"
+              data-example="Who wins the next World Cup?"
             >
-              Safety-Test
+              Safety test
             </button>
           </div>
         </div>
 
-        <div class="architecture-strip" aria-label="Systemübersicht">
+        <div class="architecture-strip" aria-label="System overview">
           <div>
             <strong>04</strong>
-            <span>Recall-Strategien</span>
+            <span>Recall strategies</span>
           </div>
           <i></i>
           <div>
             <strong>10</strong>
-            <span>Evidence-Faktoren</span>
+            <span>Evidence factors</span>
           </div>
           <i></i>
           <div>
             <strong>05</strong>
-            <span>Governance-Verdicts</span>
+            <span>Governance verdicts</span>
           </div>
           <i></i>
           <div>
             <strong>01</strong>
-            <span>Optionaler LLM-Adapter</span>
+            <span>Optional LLM adapter</span>
           </div>
         </div>
       </section>
@@ -132,7 +132,7 @@
       <section id="loading-state" class="loading-state" hidden aria-live="polite">
         <div class="loading-mark"><span></span><span></span><span></span></div>
         <div>
-          <strong>Mehrstufige Suche läuft</strong>
+          <strong>Multi-stage search running</strong>
           <p>Query Analysis → Hybrid Retrieval → Governance</p>
         </div>
       </section>
@@ -141,7 +141,7 @@
         <div class="section-heading">
           <div>
             <p class="eyebrow">Recommendation Evidence Pack</p>
-            <h2>Ergebnis & Nachvollziehbarkeit</h2>
+            <h2>Result & traceability</h2>
           </div>
           <div class="query-meta">
             <span id="query-id">Query —</span>
@@ -162,7 +162,7 @@
           <div class="factor-block">
             <div class="factor-heading">
               <span class="label">Evidence Quality Factors</span>
-              <span>Regelbasierter Score, keine Wahrscheinlichkeit</span>
+              <span>Rule-based score, not a probability</span>
             </div>
             <div id="factor-grid" class="factor-grid"></div>
           </div>
@@ -173,15 +173,15 @@
             <div class="panel-heading">
               <div>
                 <span class="label">Ranked Players</span>
-                <h3>Kandidaten</h3>
+                <h3>Candidates</h3>
               </div>
-              <span id="candidate-count" class="count-pill">0 Spieler</span>
+              <span id="candidate-count" class="count-pill">0 players</span>
             </div>
             <div id="candidate-list" class="candidate-list"></div>
             <div id="empty-candidates" class="empty-state" hidden>
               <span>Ø</span>
-              <strong>Keine belastbare Rangliste</strong>
-              <p>Die Governance-Erklärung zeigt, welche Evidenz fehlt.</p>
+              <strong>No well-supported ranking</strong>
+              <p>The governance explanation shows which evidence is missing.</p>
             </div>
           </section>
 
@@ -189,15 +189,15 @@
             <div class="panel-heading">
               <div>
                 <span class="label">Safe Answer</span>
-                <h3>Evidenzbasierte Erklärung</h3>
+                <h3>Evidence-based explanation</h3>
               </div>
               <span id="answer-mode-badge" class="no-llm-pill">Template mode</span>
             </div>
             <p class="answer-intro">
-              Diese Antwort wird ausschließlich aus dem validierten Evidence Pack erzeugt.
+              This answer is generated exclusively from the validated Evidence Pack.
             </p>
             <button id="answer-button" class="secondary-button" type="button">
-              Erklärung erzeugen
+              Generate explanation
             </button>
             <div id="answer-output" class="answer-output" hidden>
               <span id="answer-verdict"></span>
@@ -218,7 +218,7 @@
           >
             <span>
               <span class="label">Audit View</span>
-              <strong>Retrieval Trace & Laufzeiten</strong>
+              <strong>Retrieval Trace & Timings</strong>
             </span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
           </button>
@@ -238,14 +238,14 @@
     </footer>
 
     <dialog id="player-dialog" class="player-dialog">
-      <button id="dialog-close" class="dialog-close" type="button" aria-label="Schließen">×</button>
+      <button id="dialog-close" class="dialog-close" type="button" aria-label="Close">×</button>
       <div id="dialog-content"></div>
     </dialog>
 
     <div id="error-toast" class="error-toast" hidden role="alert">
-      <strong>Die Anfrage konnte nicht verarbeitet werden.</strong>
+      <strong>The request could not be processed.</strong>
       <span id="error-text"></span>
-      <button id="error-close" type="button">Schließen</button>
+      <button id="error-close" type="button">Close</button>
     </div>
   </body>
 </html>

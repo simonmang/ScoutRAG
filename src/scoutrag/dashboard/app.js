@@ -43,24 +43,24 @@ const elements = {
 };
 
 const verdictLabels = {
-  sufficient: "Belastbar",
-  limited: "Eingeschränkt",
-  insufficient: "Nicht ausreichend",
-  conflicting: "Widersprüchlich",
-  out_of_scope: "Außerhalb Scope",
+  sufficient: "Sufficient",
+  limited: "Limited",
+  insufficient: "Insufficient",
+  conflicting: "Conflicting",
+  out_of_scope: "Out of scope",
 };
 
 const factorLabels = {
-  data_coverage: "Datenabdeckung",
-  played_minutes: "Gespielte Minuten",
-  feature_availability: "Feature-Abdeckung",
-  requested_trait_coverage: "Angefragte Merkmale",
-  retrieval_agreement: "Retriever-Übereinstimmung",
-  ranking_separation: "Ranking-Abstand",
-  comparison_group_availability: "Vergleichsgruppe",
-  season_consistency: "Saison-Konsistenz",
-  missing_value_completeness: "Werte-Vollständigkeit",
-  hard_filter_fulfillment: "Harte Filter",
+  data_coverage: "Data coverage",
+  played_minutes: "Minutes played",
+  feature_availability: "Feature availability",
+  requested_trait_coverage: "Requested traits",
+  retrieval_agreement: "Retriever agreement",
+  ranking_separation: "Ranking separation",
+  comparison_group_availability: "Comparison group",
+  season_consistency: "Season consistency",
+  missing_value_completeness: "Value completeness",
+  hard_filter_fulfillment: "Hard filters",
 };
 
 const generationModeLabels = {
@@ -122,7 +122,7 @@ async function retrieve(query) {
     elements.results.hidden = false;
     elements.results.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
-    showError(error.message || "Unbekannter Fehler");
+    showError(error.message || "Unknown error");
   } finally {
     setLoading(false);
   }
@@ -176,7 +176,7 @@ function renderCandidates(pack) {
   const candidates = pack.candidates;
   elements.candidateList.replaceChildren();
   elements.candidateCount.textContent = `${candidates.length} ${
-    candidates.length === 1 ? "Spieler" : "Spieler"
+    candidates.length === 1 ? "player" : "players"
   }`;
   elements.emptyCandidates.hidden = candidates.length > 0;
   candidates.forEach((candidate) => {
@@ -192,7 +192,7 @@ function renderCandidates(pack) {
     const tags = node("div", "candidate-tags");
     [
       humanize(candidate.profile.position_group),
-      `${formatNumber(candidate.profile.minutes_played, 0)} Min.`,
+      `${formatNumber(candidate.profile.minutes_played, 0)} min`,
       `Data Q ${formatNumber(candidate.profile.data_quality, 2)}`,
       ...candidate.retrieval_trace.retrieved_by.slice(0, 3),
     ].forEach((text) => {
@@ -204,7 +204,7 @@ function renderCandidates(pack) {
 
     const detail = node("button", "detail-button");
     detail.type = "button";
-    detail.textContent = "Evidence ansehen";
+    detail.textContent = "View evidence";
     detail.addEventListener("click", () => openPlayer(candidate, pack));
     card.append(rank, main, detail);
     elements.candidateList.append(card);
@@ -215,7 +215,7 @@ function renderTrace(trace) {
   elements.strategies.replaceChildren();
   elements.timings.replaceChildren();
   Object.entries(trace.candidates_per_strategy).forEach(([name, count]) => {
-    elements.strategies.append(traceRow(humanize(name), `${count} Kandidaten`));
+    elements.strategies.append(traceRow(humanize(name), `${count} candidates`));
   });
   Object.entries(trace.stage_timings_ms).forEach(([name, duration]) => {
     elements.timings.append(traceRow(humanize(name), `${formatNumber(duration, 2)} ms`));
@@ -228,7 +228,7 @@ async function renderAnswer() {
     return;
   }
   elements.answerButton.disabled = true;
-  elements.answerButton.textContent = "Evidence Pack wird geprüft …";
+  elements.answerButton.textContent = "Checking Evidence Pack …";
   try {
     const response = await fetch(`${API_PREFIX}/answer`, {
       method: "POST",
@@ -244,26 +244,27 @@ async function renderAnswer() {
       generationModeLabels[answer.generation_mode] || answer.generation_mode;
     elements.answerText.textContent = answer.text;
     elements.answerCitations.textContent = answer.cited_player_ids.length
-      ? `Belegte Player IDs: ${answer.cited_player_ids.join(", ")}`
-      : "Keine Spielerzitate — das System enthält sich.";
+      ? `Cited player IDs: ${answer.cited_player_ids.join(", ")}`
+      : "No player citations — the system abstains.";
     const grounding = answer.grounding;
     elements.answerGrounding.textContent = grounding.fallback_used
-      ? `Grounding-Prüfung blockiert: ${grounding.violations.join("; ")}`
+      ? `Grounding check blocked: ${grounding.violations.join("; ")}`
       : grounding.claim_count
-        ? `Grounding ${formatNumber(grounding.grounding_score, 3)} · ${grounding.supported_claim_count}/${grounding.claim_count} Claims · ${grounding.cited_fact_ids.length} Fact IDs`
-        : "Deterministische Projektion des Evidence Packs";
+        ? `Grounding ${formatNumber(grounding.grounding_score, 3)} · ${grounding.supported_claim_count}/${grounding.claim_count} claims · ${grounding.cited_fact_ids.length} fact IDs`
+        : "Deterministic projection of the Evidence Pack";
     elements.answerOutput.hidden = false;
   } catch (error) {
-    showError(error.message || "Antwort konnte nicht erzeugt werden.");
+    showError(error.message || "Answer could not be generated.");
   } finally {
     elements.answerButton.disabled = false;
-    elements.answerButton.textContent = "Erklärung erzeugen";
+    elements.answerButton.textContent = "Generate explanation";
   }
 }
 
 function openPlayer(candidate, pack) {
   const profile = candidate.profile;
-  const evidence = pack.metric_evidence[profile.player_id] || [];
+  const evidence = pack.metric_evidence[profile.profile_id || profile.player_id] || [];
+  const temporal = pack.temporal_context?.[profile.player_id] || null;
   elements.dialogContent.replaceChildren();
 
   const hero = node("div", "dialog-hero");
@@ -279,7 +280,7 @@ function openPlayer(candidate, pack) {
   const stats = node("div", "profile-stats");
   [
     ["Position", humanize(profile.position_group)],
-    ["Minuten", formatNumber(profile.minutes_played, 0)],
+    ["Minutes", formatNumber(profile.minutes_played, 0)],
     ["Data Quality", formatNumber(profile.data_quality, 3)],
   ].forEach(([label, value]) => {
     const item = node("div", "profile-stat");
@@ -294,7 +295,7 @@ function openPlayer(candidate, pack) {
   const table = node("table", "metric-table");
   const head = document.createElement("thead");
   const headRow = document.createElement("tr");
-  ["Metrik", "Rohwert", "Normalisiert", "Perzentil", "Sample"].forEach((label) => {
+  ["Metric", "Raw value", "Normalized", "Percentile", "Sample"].forEach((label) => {
     const cell = document.createElement("th");
     cell.textContent = label;
     headRow.append(cell);
@@ -317,9 +318,77 @@ function openPlayer(candidate, pack) {
     tableBody.append(row);
   });
   table.append(head, tableBody);
-  body.append(stats, table);
+  body.append(stats);
+  if (temporal) {
+    body.append(renderTemporalContext(temporal, profile, pack.query_profile.requested_metrics));
+  }
+  body.append(table);
   elements.dialogContent.append(hero, body);
   elements.dialog.showModal();
+}
+
+function renderTemporalContext(context, currentProfile, requestedMetrics) {
+  const section = node("section", "temporal-context");
+  const heading = document.createElement("h3");
+  heading.textContent = "Season history & form";
+  const note = document.createElement("p");
+  note.className = "temporal-note";
+  note.textContent =
+    "The newest season is authoritative. Earlier seasons remain separate context and fallback evidence.";
+  section.append(heading, note);
+
+  const seasons = node("div", "season-timeline");
+  context.season_profiles.slice(0, 4).forEach((item, index) => {
+    const card = node("article", `season-card ${index === 0 ? "current" : ""}`);
+    const badge = document.createElement("span");
+    badge.textContent = index === 0 ? "CURRENT" : "HISTORICAL";
+    const title = document.createElement("strong");
+    title.textContent = item.season_name;
+    const team = document.createElement("p");
+    team.textContent = `${item.team_name} · ${item.competition_name}`;
+    const sample = document.createElement("small");
+    sample.textContent = `${formatNumber(item.minutes_played, 0)} min · Data Q ${formatNumber(item.data_quality, 2)}`;
+    card.append(badge, title, team, sample);
+    seasons.append(card);
+  });
+  section.append(seasons);
+
+  const currentForm = context.recent_forms.find(
+    (item) => item.profile_id === (currentProfile.profile_id || currentProfile.player_id),
+  );
+  if (currentForm) {
+    const form = node("div", "form-summary");
+    const title = document.createElement("strong");
+    title.textContent = "Recent matches";
+    const detail = document.createElement("span");
+    detail.textContent = `${currentForm.matches_in_window} matches · ${formatNumber(currentForm.minutes_in_window, 0)} min · Form data Q ${formatNumber(currentForm.data_quality, 2)}`;
+    form.append(title, detail);
+    section.append(form);
+  }
+
+  const requested = new Set(requestedMetrics || []);
+  const trends = context.season_trends
+    .filter(
+      (item) =>
+        item.current_profile_id === (currentProfile.profile_id || currentProfile.player_id) &&
+        (requested.size === 0 || requested.has(item.metric_name)),
+    )
+    .slice(0, 6);
+  if (trends.length) {
+    const trendList = node("div", "trend-list");
+    trends.forEach((item) => {
+      const row = node("div", "trend-row");
+      const metric = document.createElement("span");
+      metric.textContent = humanize(item.metric_name);
+      const direction = document.createElement("strong");
+      direction.textContent = humanize(item.direction);
+      direction.dataset.direction = item.direction;
+      row.append(metric, direction);
+      trendList.append(row);
+    });
+    section.append(trendList);
+  }
+  return section;
 }
 
 function traceRow(label, value) {
@@ -357,7 +426,7 @@ function readError(payload) {
   if (Array.isArray(payload.detail)) {
     return payload.detail.map((item) => item.msg).join("; ");
   }
-  return "API-Fehler ohne Detail.";
+  return "API error without detail.";
 }
 
 function humanize(value) {
@@ -367,7 +436,7 @@ function humanize(value) {
 }
 
 function formatNumber(value, digits = 2) {
-  return Number(value).toLocaleString("de-DE", {
+  return Number(value).toLocaleString("en-US", {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });

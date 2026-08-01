@@ -1069,6 +1069,96 @@ footer a {
   font-weight: 500;
 }
 
+.temporal-context {
+  margin: 0 0 28px;
+  padding: 20px;
+  background: #f3f3ed;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.temporal-context h3 {
+  margin: 0 0 5px;
+  font-family: Georgia, serif;
+  font-weight: 500;
+}
+
+.temporal-note {
+  margin: 0 0 15px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.season-timeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 8px;
+}
+
+.season-card {
+  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+.season-card.current {
+  border-color: #7f9d57;
+  box-shadow: inset 0 3px 0 var(--green);
+}
+
+.season-card > span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 0.53rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.season-card p,
+.season-card small {
+  display: block;
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+.form-summary,
+.trend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.form-summary {
+  margin-top: 12px;
+  padding: 10px 12px;
+  color: #fff;
+  background: var(--navy);
+  border-radius: 8px;
+  font-size: 0.7rem;
+}
+
+.trend-list {
+  margin-top: 10px;
+}
+
+.trend-row {
+  padding: 7px 2px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.68rem;
+}
+
+.trend-row strong[data-direction="improving"] {
+  color: #547329;
+}
+
+.trend-row strong[data-direction="declining"] {
+  color: #934f43;
+}
+
 .metric-table {
   width: 100%;
   border-collapse: collapse;
