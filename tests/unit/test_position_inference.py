@@ -53,10 +53,20 @@ def test_central_midfield_trio_is_not_split_into_wingers() -> None:
     assert infer_slot_role("4-3-3", "4:3") == "winger"
 
 
-def test_back_three_formations_are_not_refined() -> None:
-    assert infer_slot_role("3-5-2", "2:1") is None
-    assert infer_slot_role("3-4-3", "2:2") is None
-    assert infer_slot_role("5-3-2", "2:1") is None
+def test_back_three_and_five_defensive_lines_are_refined() -> None:
+    # A pure back three has no wide wing-back slot: every column is a centre-back.
+    assert infer_slot_role("3-5-2", "2:1") == "center_back"
+    assert infer_slot_role("3-4-3", "2:2") == "center_back"
+    # A back five keeps the same edge/centre split as a back four.
+    assert infer_slot_role("5-3-2", "2:1") == "fullback_wingback"
+    assert infer_slot_role("5-3-2", "2:3") == "center_back"
+
+
+def test_back_three_and_five_midfield_lines_are_not_refined() -> None:
+    # The back line's own split is reliable at any size, but a back-three/five
+    # formation's midfield line may itself hide wing-backs, unlike a back four's.
+    assert infer_slot_role("3-5-2", "3:1") is None
+    assert infer_slot_role("5-3-2", "3:2") is None
 
 
 def test_unrecognized_or_malformed_input_is_not_refined() -> None:
@@ -98,7 +108,7 @@ def test_refine_position_group_rejects_coarse_mismatch() -> None:
 
 
 def test_refine_position_group_ignores_unrefinable_observations() -> None:
-    observations = [("3-5-2", "2:1")] * 8  # Back-three: none of these refine.
-    position, confidence = refine_position_group(observations, coarse_group="defender")
-    assert position == "defender"
+    observations = [("3-5-2", "3:1")] * 8  # Back-three midfield line: none of these refine.
+    position, confidence = refine_position_group(observations, coarse_group="midfielder")
+    assert position == "midfielder"
     assert confidence == 0.0

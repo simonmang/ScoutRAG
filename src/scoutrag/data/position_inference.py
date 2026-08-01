@@ -11,12 +11,14 @@ midfielder from an attacking one, a winger from a central forward —
 without any second data source or player-identity matching.
 
 Refinement only ever narrows a coarse group into one of its own
-sub-roles; it never contradicts the provider's own coarse tag. It is
-also deliberately limited to back-four formations, where the
-fullback/centre-back and wide/central splits are unambiguous. Back-three
-formations mix wing-back and midfield conventions in ways a grid slot
-alone cannot resolve safely, so they are left at the coarse group
-instead of guessed.
+sub-roles; it never contradicts the provider's own coarse tag. The
+defensive and forward lines are resolved for back-three, back-four, and
+back-five shapes alike, since a back line's own centre-back/wide split
+is unambiguous regardless of how many players are in it. Midfield lines
+are resolved only for back-four formations: a back-three or back-five's
+midfield line can itself contain wing-backs rather than central
+midfielders, a convention a grid slot alone cannot resolve safely, so
+those slots are left at the coarse group instead of guessed.
 """
 
 from __future__ import annotations
@@ -42,10 +44,12 @@ def infer_slot_role(formation: str, grid: str) -> str | None:
     """Return a refined role for one lineup slot, or ``None`` if unclear.
 
     ``formation`` is the provider's back-to-front string (for example
-    ``"4-2-3-1"``); ``grid`` is the player's ``"row:column"`` slot (row 1
-    is always the goalkeeper). Returns ``None`` for goalkeepers (already
-    unambiguous at the coarse level), back-three/back-five formations,
-    formations with more than two midfield lines, or malformed input.
+    ``"4-2-3-1"`` or ``"3-4-2-1"``); ``grid`` is the player's
+    ``"row:column"`` slot (row 1 is always the goalkeeper). Returns
+    ``None`` for goalkeepers (already unambiguous at the coarse level),
+    a base shape other than back-three/four/five, a midfield slot in a
+    non-back-four formation, formations with more than two midfield
+    lines, or malformed input.
     """
 
     rows = _parse_formation(formation)
@@ -56,8 +60,9 @@ def infer_slot_role(formation: str, grid: str) -> str | None:
         return None
     if row_index == 1:
         return None  # Goalkeeper: already unambiguous, nothing to refine.
-    if rows[0] != 4:
-        return None  # Back-three/back-five: wing-back convention is ambiguous.
+    back_line_size = rows[0]
+    if back_line_size not in (3, 4, 5):
+        return None  # Rare/malformed base shape: don't guess.
 
     line_index = row_index - 2  # 0 = defence, increasing towards attack.
     if line_index < 0 or line_index >= len(rows):
@@ -67,12 +72,17 @@ def infer_slot_role(formation: str, grid: str) -> str | None:
         return None
     is_edge = column in (1, count)
 
-    if line_index == 0:  # Defensive line.
-        return "fullback_wingback" if is_edge and count == 4 else "center_back"
-    if line_index == len(rows) - 1:  # Forward line.
+    if line_index == 0:  # Defensive line: the back line's own split is reliable at any size.
+        if back_line_size == 3:
+            return "center_back"  # A pure back three has no wide wing-back slot.
+        return "fullback_wingback" if is_edge else "center_back"
+    if line_index == len(rows) - 1:  # Forward line: reliable regardless of back-line size.
         if count <= 2:
             return "forward"
         return "winger" if is_edge else "forward"
+
+    if back_line_size != 4:
+        return None  # A back-three/five midfield line may itself hide wing-backs.
 
     midfield_lines = rows[1:-1]
     if len(midfield_lines) > 2:
