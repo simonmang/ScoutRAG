@@ -13,9 +13,13 @@ from scoutrag.retrieval.dense import (
     SentenceTransformerEmbeddingModel,
 )
 
-DEFAULT_PROFILES_PATH = Path("data/processed/bundesliga-2023-2024/player_season_profiles.parquet")
-DEFAULT_EVIDENCE_PATH = Path("data/processed/bundesliga-2023-2024/player_metric_evidence.parquet")
-DEFAULT_DENSE_INDEX_PATH = Path("data/processed/bundesliga-2023-2024/dense_index.json")
+DEFAULT_PROFILES_PATH = Path(
+    "data/processed/scouting-2025-2026/combined/player_season_profiles.parquet"
+)
+DEFAULT_EVIDENCE_PATH = Path(
+    "data/processed/scouting-2025-2026/combined/player_metric_evidence.parquet"
+)
+DEFAULT_DENSE_INDEX_PATH = Path("data/processed/scouting-2025-2026/combined/dense_index.json")
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -15,8 +15,10 @@ from scoutrag.retrieval.dense import (
 )
 
 DEFAULT_GOLDEN_PATH = Path("evaluation/golden_queries.json")
-DEFAULT_PROFILES_PATH = Path("data/processed/bundesliga-2023-2024/player_season_profiles.parquet")
-DEFAULT_DENSE_INDEX_PATH = Path("data/processed/bundesliga-2023-2024/dense_index.json")
+DEFAULT_PROFILES_PATH = Path(
+    "data/processed/scouting-2025-2026/combined/player_season_profiles.parquet"
+)
+DEFAULT_DENSE_INDEX_PATH = Path("data/processed/scouting-2025-2026/combined/dense_index.json")
 DEFAULT_OUTPUT_PATH = Path("evaluation/results/phase5_ablation.json")
 
 

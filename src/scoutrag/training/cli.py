@@ -22,7 +22,7 @@ from scoutrag.training.trainer import (
 
 DEFAULT_SPECS = Path("evaluation/bi_encoder_training_queries.json")
 DEFAULT_GOLDEN = Path("evaluation/golden_queries.json")
-DEFAULT_PROFILES = Path("data/processed/bundesliga-2023-2024/player_season_profiles.parquet")
+DEFAULT_PROFILES = Path("data/processed/scouting-2025-2026/combined/player_season_profiles.parquet")
 DEFAULT_MINED = Path("evaluation/results/phase9_mined_triplets.json")
 DEFAULT_MODEL_OUTPUT = Path("models/scoutrag-football-bi-encoder-v1")
 DEFAULT_REPORT = Path("evaluation/results/phase9_bi_encoder_comparison.json")

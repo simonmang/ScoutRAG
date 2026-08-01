@@ -24,11 +24,13 @@ class Settings(BaseSettings):
     default_result_count: int = Field(default=10, ge=1, le=100)
     max_result_count: int = Field(default=50, ge=1, le=100)
     candidate_pool_size: int = Field(default=40, ge=1, le=500)
-    profiles_path: Path = Path("data/processed/bundesliga-2023-2024/player_season_profiles.parquet")
-    metric_evidence_path: Path = Path(
-        "data/processed/bundesliga-2023-2024/player_metric_evidence.parquet"
+    profiles_path: Path = Path(
+        "data/processed/scouting-2025-2026/combined/player_season_profiles.parquet"
     )
-    dense_index_path: Path = Path("data/processed/bundesliga-2023-2024/dense_index.json")
+    metric_evidence_path: Path = Path(
+        "data/processed/scouting-2025-2026/combined/player_metric_evidence.parquet"
+    )
+    dense_index_path: Path = Path("data/processed/scouting-2025-2026/combined/dense_index.json")
     history_path: Path = Path("data/processed/scouting-history-2024-2026")
     dense_model_name: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     enable_dense_retrieval: bool = True
