@@ -20,6 +20,7 @@ from scoutrag.api.routes.dashboard import router as dashboard_router
 from scoutrag.api.routes.health import router as health_router
 from scoutrag.api.routes.retrieval import router as retrieval_router
 from scoutrag.config import Settings, get_settings
+from scoutrag.data.history import PlayerHistoryStore
 from scoutrag.governance.pipeline import GovernedRetrievalPipeline
 from scoutrag.logging import configure_logging
 from scoutrag.ports.answering import AnswerGenerator
@@ -30,6 +31,7 @@ def create_app(
     *,
     pipeline: GovernedRetrievalPipeline | None = None,
     answer_generator: AnswerGenerator | None = None,
+    history_store: PlayerHistoryStore | None = None,
 ) -> FastAPI:
     """Create an isolated app instance suitable for tests and deployment."""
     resolved_settings = settings or get_settings()
@@ -45,9 +47,13 @@ def create_app(
         description="Evidence-based multi-stage retrieval for football scouting.",
         lifespan=lifespan,
     )
+    resolved_history_store = history_store
+    if resolved_history_store is None and resolved_settings.history_path.exists():
+        resolved_history_store = PlayerHistoryStore(resolved_settings.history_path)
     application.state.settings = resolved_settings
+    application.state.history_store = resolved_history_store
     application.state.pipeline_provider = GovernedPipelineProvider(
-        default_pipeline_loader(resolved_settings),
+        default_pipeline_loader(resolved_settings, resolved_history_store),
         pipeline=pipeline,
     )
     application.state.answer_generator = answer_generator or _build_answer_generator(

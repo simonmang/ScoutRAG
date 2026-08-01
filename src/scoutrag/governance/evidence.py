@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
 
-from scoutrag.domain.player import PlayerMetricEvidence
+from scoutrag.domain.player import PlayerMetricEvidence, profile_evidence_key
 from scoutrag.domain.retrieval import RankedPlayerCandidate
 
 
@@ -20,7 +20,7 @@ class PlayerMetricEvidenceIndex:
     def __init__(self, evidence: list[PlayerMetricEvidence]) -> None:
         grouped: defaultdict[str, list[PlayerMetricEvidence]] = defaultdict(list)
         for item in evidence:
-            grouped[item.player_id].append(item)
+            grouped[item.profile_id or item.player_id].append(item)
         self._by_player = {
             player_id: tuple(
                 sorted(
@@ -41,7 +41,9 @@ class PlayerMetricEvidenceIndex:
     ) -> dict[str, list[PlayerMetricEvidence]]:
         """Return a copy so downstream code cannot mutate the index."""
         return {
-            candidate.profile.player_id: list(self._by_player[candidate.profile.player_id])
+            profile_evidence_key(candidate.profile): list(
+                self._by_player[profile_evidence_key(candidate.profile)]
+            )
             for candidate in candidates
-            if candidate.profile.player_id in self._by_player
+            if profile_evidence_key(candidate.profile) in self._by_player
         }

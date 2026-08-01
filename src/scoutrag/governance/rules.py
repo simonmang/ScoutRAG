@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from statistics import fmean
 
 from scoutrag.domain.evidence import EvidenceVerdict, RecommendationGovernance
-from scoutrag.domain.player import PlayerMetricEvidence
+from scoutrag.domain.player import PlayerMetricEvidence, profile_evidence_key
 from scoutrag.domain.query import QueryIntent, QueryProfile
 from scoutrag.domain.retrieval import RankedPlayerCandidate
 from scoutrag.retrieval.common import matches_hard_filters
@@ -137,7 +137,7 @@ class RuleBasedRecommendationGovernor:
         relevant_evidence = [
             item
             for candidate in candidates
-            for item in evidence.get(candidate.profile.player_id, [])
+            for item in evidence.get(profile_evidence_key(candidate.profile), [])
             if not requested or item.metric_name in requested
         ]
         requested_slots = len(candidates) * len(requested)
@@ -274,7 +274,7 @@ class RuleBasedRecommendationGovernor:
         available_metrics = {
             item.metric_name
             for candidate in candidates
-            for item in evidence.get(candidate.profile.player_id, [])
+            for item in evidence.get(profile_evidence_key(candidate.profile), [])
             if item.raw_value is not None or item.normalized_value is not None
         }
         missing_metrics = sorted(requested - available_metrics)
@@ -282,7 +282,7 @@ class RuleBasedRecommendationGovernor:
         comparable = [
             item
             for candidate in candidates
-            for item in evidence.get(candidate.profile.player_id, [])
+            for item in evidence.get(profile_evidence_key(candidate.profile), [])
             if item.metric_name in requested and item.percentile is not None
         ]
         if not comparable:
@@ -398,7 +398,16 @@ class RuleBasedRecommendationGovernor:
         if len(seasons) != 1:
             return 0
         if any(
-            len({item.season_id for item in evidence.get(candidate.profile.player_id, [])}) > 1
+            len(
+                {
+                    item.season_id
+                    for item in evidence.get(
+                        profile_evidence_key(candidate.profile),
+                        [],
+                    )
+                }
+            )
+            > 1
             for candidate in candidates
         ):
             return 0

@@ -1,7 +1,13 @@
 """Composition helper for the default governed hybrid pipeline."""
 
+from collections.abc import Callable
+
 from scoutrag.application.noop import NoOpPlayerReranker
-from scoutrag.domain.player import PlayerMetricEvidence, PlayerSeasonProfile
+from scoutrag.domain.player import (
+    PlayerMetricEvidence,
+    PlayerSeasonProfile,
+    PlayerTemporalContext,
+)
 from scoutrag.governance.evidence import PlayerMetricEvidenceIndex
 from scoutrag.governance.pipeline import GovernedRetrievalPipeline
 from scoutrag.governance.rules import RuleBasedRecommendationGovernor
@@ -23,6 +29,9 @@ def build_governed_pipeline(
     dense_retriever: DensePlayerRetriever | None = None,
     player_reranker: PlayerReranker | None = None,
     candidate_pool_size: int = 40,
+    temporal_context_loader: (
+        Callable[[list[str]], dict[str, PlayerTemporalContext]] | None
+    ) = None,
 ) -> GovernedRetrievalPipeline:
     """Compose default recall while keeping ranking and governance injectable."""
     retrievers: list[PlayerRetriever] = [
@@ -52,4 +61,5 @@ def build_governed_pipeline(
         retrieval,
         PlayerMetricEvidenceIndex(evidence),
         RuleBasedRecommendationGovernor(),
+        temporal_context_loader=temporal_context_loader,
     )

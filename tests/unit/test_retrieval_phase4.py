@@ -200,6 +200,26 @@ def test_query_intents_cover_supported_and_out_of_scope_requests(
     assert RuleBasedQueryAnalyzer(profiles).analyze(query).intent.value == expected_intent
 
 
+@pytest.mark.parametrize(
+    ("query", "expected_scope", "expected_seasons"),
+    [
+        ("Zeige die aktuelle Form von Joshua Kimmich", "recent_form", []),
+        ("Zeige die Entwicklung von Joshua Kimmich", "trend", []),
+        ("Joshua Kimmich in der Saison 2022/23", "history", ["2022/2023"]),
+    ],
+)
+def test_query_analysis_keeps_time_perspectives_explicit(
+    profiles: list[PlayerSeasonProfile],
+    query: str,
+    expected_scope: str,
+    expected_seasons: list[str],
+) -> None:
+    analyzed = RuleBasedQueryAnalyzer(profiles).analyze(query)
+
+    assert analyzed.temporal_scope.value == expected_scope
+    assert analyzed.season_filters == expected_seasons
+
+
 def test_structured_retrieval_applies_minutes_position_and_metric(
     profiles: list[PlayerSeasonProfile],
 ) -> None:

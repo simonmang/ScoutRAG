@@ -6,6 +6,7 @@ from threading import Lock
 from fastapi import HTTPException, Request, status
 
 from scoutrag.config import Settings
+from scoutrag.data.history import PlayerHistoryStore
 from scoutrag.governance.evidence import load_metric_evidence
 from scoutrag.governance.factory import build_governed_pipeline
 from scoutrag.governance.pipeline import GovernedRetrievalPipeline
@@ -41,7 +42,10 @@ class GovernedPipelineProvider:
         return self._pipeline
 
 
-def default_pipeline_loader(settings: Settings) -> Callable[[], GovernedRetrievalPipeline]:
+def default_pipeline_loader(
+    settings: Settings,
+    history_store: PlayerHistoryStore | None = None,
+) -> Callable[[], GovernedRetrievalPipeline]:
     """Create a deferred loader from environment-backed artifact paths."""
 
     def load() -> GovernedRetrievalPipeline:
@@ -72,6 +76,11 @@ def default_pipeline_loader(settings: Settings) -> Callable[[], GovernedRetrieva
             evidence,
             dense_retriever=dense,
             candidate_pool_size=settings.candidate_pool_size,
+            temporal_context_loader=(
+                (lambda player_ids: history_store.for_players(player_ids, match_limit=5))
+                if history_store is not None
+                else None
+            ),
         )
 
     return load
@@ -87,3 +96,18 @@ def get_governed_pipeline(request: Request) -> GovernedRetrievalPipeline:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(error),
         ) from error
+
+
+def get_player_history_store(request: Request) -> PlayerHistoryStore:
+    """Return the optional local history store with an actionable 503."""
+
+    store: PlayerHistoryStore | None = request.app.state.history_store
+    if store is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "ScoutRAG multi-season history is not built yet. Run "
+                "'scoutrag-data api-football-history-build' first."
+            ),
+        )
+    return store

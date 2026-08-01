@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
-from scoutrag.api.dependencies import get_governed_pipeline
+from scoutrag.api.dependencies import get_governed_pipeline, get_player_history_store
 from scoutrag.api.schemas import (
     AnswerRequest,
     CompactCandidate,
@@ -12,10 +12,12 @@ from scoutrag.api.schemas import (
     RetrievalRequest,
 )
 from scoutrag.config import Settings
+from scoutrag.data.history import PlayerHistoryStore
 from scoutrag.domain.evidence import (
     GeneratedAnswer,
     RecommendationEvidencePack,
 )
+from scoutrag.domain.player import PlayerTemporalContext
 from scoutrag.governance.pipeline import GovernedRetrievalPipeline
 from scoutrag.ports.answering import AnswerGenerator
 
@@ -24,6 +26,7 @@ PipelineDependency = Annotated[
     GovernedRetrievalPipeline,
     Depends(get_governed_pipeline),
 ]
+HistoryDependency = Annotated[PlayerHistoryStore, Depends(get_player_history_store)]
 
 
 @router.post("/retrieve", response_model=RecommendationEvidencePack)
@@ -81,6 +84,28 @@ def answer(payload: AnswerRequest, request: Request) -> GeneratedAnswer:
     """Render only the supplied validated Evidence Pack; no retrieval is hidden here."""
     generator: AnswerGenerator = request.app.state.answer_generator
     return generator.generate(payload.evidence_pack)
+
+
+@router.get("/players/{player_id}/history", response_model=PlayerTemporalContext)
+def player_history(
+    player_id: str,
+    history_store: HistoryDependency,
+    match_limit: int = 10,
+) -> PlayerTemporalContext:
+    """Return separate season, club, form, trend, and recent-match evidence."""
+
+    if not 0 <= match_limit <= 50:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="match_limit must be between zero and 50",
+        )
+    context = history_store.for_player(player_id, match_limit=match_limit)
+    if context.identity is None and not context.season_profiles:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No player history found for player_id={player_id}",
+        )
+    return context
 
 
 def _validate_result_count(payload: RetrievalRequest, settings: Settings) -> None:

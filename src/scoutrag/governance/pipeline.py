@@ -1,8 +1,10 @@
 """Assemble the LLM-free RecommendationEvidencePack after retrieval."""
 
+from collections.abc import Callable
 from time import perf_counter
 
 from scoutrag.domain.evidence import RecommendationEvidencePack, RuntimeMetrics
+from scoutrag.domain.player import PlayerTemporalContext
 from scoutrag.governance.evidence import PlayerMetricEvidenceIndex
 from scoutrag.ports.governance import RecommendationGovernor
 from scoutrag.retrieval.pipeline import HybridRetrievalPipeline
@@ -16,10 +18,14 @@ class GovernedRetrievalPipeline:
         retrieval_pipeline: HybridRetrievalPipeline,
         evidence_index: PlayerMetricEvidenceIndex,
         governor: RecommendationGovernor,
+        temporal_context_loader: (
+            Callable[[list[str]], dict[str, PlayerTemporalContext]] | None
+        ) = None,
     ) -> None:
         self.retrieval_pipeline = retrieval_pipeline
         self.evidence_index = evidence_index
         self.governor = governor
+        self.temporal_context_loader = temporal_context_loader
 
     def search(
         self,
@@ -43,6 +49,29 @@ class GovernedRetrievalPipeline:
             retrieval_result.candidates,
             evidence,
         )
+        temporal_context: dict[str, PlayerTemporalContext] = {}
+        if self.temporal_context_loader is not None:
+            player_ids = list(
+                dict.fromkeys(
+                    candidate.profile.player_id for candidate in retrieval_result.candidates
+                )
+            )
+            temporal_context = self.temporal_context_loader(player_ids)
+            has_fallback = any(
+                len(context.season_profiles) > 1 for context in temporal_context.values()
+            )
+            if has_fallback and governance.verdict.value in {"limited", "insufficient"}:
+                governance = governance.model_copy(
+                    update={
+                        "warnings": [
+                            *governance.warnings,
+                            (
+                                "Historical season evidence is available as transparent "
+                                "fallback context; it does not replace the current-season verdict."
+                            ),
+                        ]
+                    }
+                )
         governance_ms = _elapsed_ms(governance_started)
         stage_timings = retrieval_result.retrieval_trace.stage_timings_ms
         runtime = RuntimeMetrics(
@@ -63,6 +92,7 @@ class GovernedRetrievalPipeline:
             candidates=retrieval_result.candidates,
             retrieval_trace=retrieval_result.retrieval_trace,
             metric_evidence=evidence,
+            temporal_context=temporal_context,
             limitations=list(governance.warnings),
             missing_evidence=list(governance.missing_evidence),
             runtime_metrics=runtime,

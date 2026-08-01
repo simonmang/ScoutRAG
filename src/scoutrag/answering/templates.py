@@ -7,7 +7,7 @@ from scoutrag.domain.evidence import (
     GroundingReport,
     RecommendationEvidencePack,
 )
-from scoutrag.domain.player import PlayerMetricEvidence
+from scoutrag.domain.player import PlayerMetricEvidence, profile_evidence_key
 from scoutrag.domain.retrieval import RankedPlayerCandidate
 
 
@@ -91,7 +91,7 @@ class TemplateAnswerGenerator:
         requested = set(pack.query_profile.requested_metrics)
         evidence = [
             item
-            for item in pack.metric_evidence.get(profile.player_id, [])
+            for item in pack.metric_evidence.get(profile_evidence_key(profile), [])
             if item.metric_name in requested
         ]
         facts = ", ".join(_metric_fact(item) for item in evidence)
@@ -99,9 +99,9 @@ class TemplateAnswerGenerator:
             f"{candidate.rank}. {profile.player_name} — {profile.team_name}, {profile.season_name}"
         )
         if not facts:
-            return f"{base}."
+            return f"{base}.{_temporal_suffix(candidate, pack, german)}"
         label = "Evidenz" if german else "Evidence"
-        return f"{base}. {label}: {facts}."
+        return f"{base}. {label}: {facts}.{_temporal_suffix(candidate, pack, german)}"
 
 
 def _metric_fact(item: PlayerMetricEvidence) -> str:
@@ -112,6 +112,30 @@ def _metric_fact(item: PlayerMetricEvidence) -> str:
     if item.percentile is not None:
         parts.append(f"P{item.percentile:g}")
     return " ".join(parts)
+
+
+def _temporal_suffix(
+    candidate: RankedPlayerCandidate,
+    pack: RecommendationEvidencePack,
+    german: bool,
+) -> str:
+    context = pack.temporal_context.get(candidate.profile.player_id)
+    if context is None:
+        return ""
+    historical = [
+        profile
+        for profile in context.season_profiles
+        if profile.profile_id != candidate.profile.profile_id
+        and int(profile.season_name[:4]) < int(candidate.profile.season_name[:4])
+    ]
+    if not historical:
+        return ""
+    previous = historical[0]
+    label = " Historischer Kontext" if german else " Historical context"
+    return (
+        f"{label}: {previous.team_name}, {previous.competition_name} "
+        f"{previous.season_name}, {previous.minutes_played:g} Min."
+    )
 
 
 def _is_german(query: str) -> bool:
