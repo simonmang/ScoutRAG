@@ -1,61 +1,36 @@
 # ScoutRAG data workspace
 
-Raw StatsBomb Open Data and large intermediate Parquet datasets are intentionally excluded from
-Git. This keeps the repository small and makes every artifact reproducible from source.
-
-Two compact derived artifacts are committed for the portfolio demo:
-
-- `player_season_profiles.parquet` — 373 typed profiles, 68,786 bytes
-- `player_metric_evidence.parquet` — 11,563 source-linked records, 98,010 bytes
-
-The matching `manifest.json` and `validation_report.json` are committed alongside them. Raw
-events, match records, minute intervals, dense embeddings, and downloaded models remain ignored.
+Raw provider responses and all generated Parquet datasets are intentionally excluded from Git.
+API-Football's terms prohibit redistributing their data to third parties, so nothing derived from
+it is ever committed — every real artifact must be regenerated locally from your own API key.
 
 ```text
 data/
-├── raw/        # StatsBomb JSON hierarchy
-└── processed/  # normalized and aggregated Parquet artifacts
+├── raw/        # downloaded provider JSON (StatsBomb, API-Football) — all ignored
+└── processed/  # normalized and aggregated Parquet artifacts — all ignored except the CI fixture
 ```
 
-The default Phase 3 reference dataset is 1. Bundesliga 2023/2024:
+The only committed data is a fully synthetic three-player fixture used solely by Docker and CI to
+prove the packaged application starts and serves a governed result:
+
+- `data/processed/synthetic-ci-fixture/player_season_profiles.parquet`
+- `data/processed/synthetic-ci-fixture/player_metric_evidence.parquet`
+
+Every name and statistic in it is invented by `scripts/build_synthetic_ci_fixture.py`; it is never
+presented as a real dataset. Regenerate it with:
 
 ```powershell
-scoutrag-data download --competition-id 9 --season-id 281
-scoutrag-data build --competition-id 9 --season-id 281
+python scripts/build_synthetic_ci_fixture.py
 ```
 
-The available competition entry contains Bayer Leverkusen's 34 matches rather than every
-Bundesliga match. The pipeline is not club-specific: Bayern Munich is preferred in examples, but
-its profiles in this partition cover only two matches. ScoutRAG therefore retains their measured
-features while correctly withholding position percentiles. Leverkusen is the full-season
-reference only because of the available upstream test data.
+## API-Football source (primary)
 
-StatsBomb must be credited when publishing analysis based on their open data. See the
-[StatsBomb Open Data repository](https://github.com/statsbomb/open-data) for its current terms.
-
-Phase 4 creates an additional ignored `processed/bundesliga-2023-2024/dense_index.json` artifact.
-It contains the selected model name, season-safe profile keys, and document embeddings. Rebuild it
-after changing the player profiles or embedding model:
-
-```powershell
-scoutrag-retrieve "Zeige das Profil von Joshua Kimmich" --rebuild-dense-index
-```
-
-The local launcher and Docker demo explicitly disable dense retrieval, so the committed snapshot
-is enough to run exact, structured, and BM25 retrieval plus governance without network access.
-
-## Optional API-Football source
-
-API-Football can provide broader league- and season-level player coverage than the compact
-StatsBomb Open Data snapshot. Live responses are cached under `data/raw/api_football/` and remain
-excluded from Git. The dashboard never calls the provider directly; a deliberate local sync
-creates the same typed `PlayerSeasonProfile` and `PlayerMetricEvidence` artifacts used by
-retrieval.
-
-The sources remain distinct. API-Football supplies aggregated fields such as appearances,
-minutes, shots, goals, passes, tackles, interceptions and duels. StatsBomb supplies event-level
-evidence and supports derived metrics such as pressures and progressive actions. ScoutRAG does
-not fill an unavailable provider metric with an invented value.
+API-Football supplies current, multi-league, multi-season player statistics. Live responses are
+cached under `data/raw/` and remain excluded from Git. The dashboard never calls the provider
+directly; a deliberate local sync creates typed `PlayerSeasonProfile` and `PlayerMetricEvidence`
+artifacts used by retrieval. A free API-Football plan is enough to generate one league/season for
+a first look; the multi-league dataset used in development needs a paid plan for its request
+volume.
 
 As a smaller single-league example, one competition-season can be reconstructed directly from its
 fixture packages:
@@ -70,8 +45,8 @@ records, and 39 metric definitions across all 18 clubs. The two relegation fixtu
 ignored raw artifact but are excluded from league percentiles. `/players` contributes identity
 metadata only; fixture player statistics are authoritative for minutes, historical teams, and
 performance. The `sync_scouting_universe.ps1` workflow below runs this same fixture-sync and
-fixture-build pair once per configured league, so the actual local dataset the dashboard and
-`.env` point to is the combined multi-league output, not this single-league example.
+fixture-build pair once per configured league, so the actual dataset the dashboard and `.env`
+point to by default is the combined multi-league output, not this single-league example.
 
 The expanded scouting universe is configured in `config/scouting_leagues.json` and can be
 reproduced for an explicit season with:
@@ -106,3 +81,40 @@ scoutrag-data api-football-history-build `
 It persists stable identities, club-season stints, bounded recent-form snapshots, individual
 match performances, and descriptive season trends. These generated artifacts remain ignored by
 Git; only schemas, code, tests, catalog, and reproduction commands belong in the repository.
+
+Phase 4 creates an additional ignored `dense_index.json` artifact per profile set. It contains the
+selected model name, season-safe profile keys, and document embeddings. Rebuild it after changing
+the player profiles or embedding model:
+
+```powershell
+scoutrag-retrieve "Show the profile of Joshua Kimmich" \
+  --profiles data/processed/scouting-2025-2026/combined/player_season_profiles.parquet \
+  --dense-index data/processed/scouting-2025-2026/combined/dense_index.json \
+  --rebuild-dense-index
+```
+
+## Optional StatsBomb data pipeline (secondary)
+
+StatsBomb Open Data is an independently working alternative ingestion path into the same typed
+schema — not part of the demo or the default configuration, kept to show ScoutRAG is not tied to
+one provider:
+
+```powershell
+scoutrag-data download --competition-id 9 --season-id 281
+scoutrag-data build --competition-id 9 --season-id 281
+```
+
+The available competition entry contains Bayer Leverkusen's 34 matches rather than every
+Bundesliga match. The pipeline is not club-specific: Bayern Munich is preferred in examples, but
+its profiles in this partition cover only two matches. ScoutRAG therefore retains their measured
+features while correctly withholding position percentiles. Leverkusen is the full-season
+reference only because of the available upstream test data.
+
+StatsBomb must be credited when publishing analysis based on their open data. See the
+[StatsBomb Open Data repository](https://github.com/statsbomb/open-data) for its current terms —
+unlike API-Football, StatsBomb's Open Data license does permit this kind of use.
+
+The sources remain distinct. API-Football supplies aggregated fields such as appearances,
+minutes, shots, goals, passes, tackles, interceptions and duels. StatsBomb supplies event-level
+evidence and supports derived metrics such as pressures and progressive actions. ScoutRAG does
+not fill an unavailable provider metric with an invented value.

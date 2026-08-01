@@ -1,34 +1,28 @@
-# Local dashboard and portfolio demo
+# Local dashboard demo
 
-ScoutRAG ships a compact, model-free local demonstration. It contains only the generated
-`PlayerSeasonProfile` and `PlayerMetricEvidence` artifacts required by the application—no raw
-events, downloaded embedding model, API credential, or public web service.
+ScoutRAG runs entirely locally against a dataset you generate yourself with your own
+[API-Football](https://www.api-football.com/) key — see [data notes](../data/README.md) for the
+full generation workflow. Nothing derived from that provider is ever committed or shipped, since
+their terms prohibit redistributing the data to third parties.
 
-## Demo data
+## Generate a dataset
 
-The committed Bundesliga 2023/2024 snapshot contains:
+```powershell
+# 1. Copy .env.example to .env and add your key:
+#    API_FOOTBALL_KEY=...
+# 2. Generate at least one league/season (a free plan is enough for one league):
+.\sync_scouting_universe.ps1 -Groups top5 -SeasonStartYear 2025
+.\sync_scouting_universe.ps1 -Build -Groups top5 -SeasonStartYear 2025
+```
 
-- 373 season-specific player profiles
-- 11,563 source-linked metric-evidence records
-- 34 StatsBomb Open Data matches
-- 21 Bayern Munich profiles from two observed matches
-- full-season Leverkusen coverage from the available upstream partition
-
-This is intentionally not described as a complete Bundesliga dataset. Governance exposes low
-minutes, incomplete club coverage, unavailable percentiles, and unsuitable comparison groups.
-Bayern examples demonstrate transparent `LIMITED` behavior; statistically sufficient rankings
-can only use source-covered comparison groups.
-
-The snapshot hashes and warnings are recorded in:
-
-- `data/processed/bundesliga-2023-2024/manifest.json`
-- `data/processed/bundesliga-2023-2024/validation_report.json`
+`sync_scouting_universe.ps1` without arguments builds the full 26-league, multi-season catalog,
+which needs a paid plan for its request volume. See [data notes](../data/README.md) for the
+complete set of options.
 
 ## Windows one-click start
 
 Double-click `start_dashboard.cmd` in the repository root. It calls the PowerShell launcher,
-checks Python and both demo artifacts, selects the local model-free configuration, opens the
-browser, and starts FastAPI.
+checks Python and both generated data artifacts, opens the browser, and starts FastAPI.
 
 The direct PowerShell equivalent is:
 
@@ -45,11 +39,15 @@ Useful options:
 ```
 
 `-EnableDenseRetrieval` expects the configured sentence-transformer model to exist in the local
-cache. The standard local demo deliberately avoids that dependency.
+cache; the first run downloads it. `start_dashboard_ai.cmd` additionally loads `OPENAI_API_KEY`
+from `.env` into the running process and starts in grounded-answer mode.
 
 ## Docker
 
-Build and run the same model-free image used by the deployment blueprint:
+The Docker image ships with a small, entirely invented three-player fixture
+(`scripts/build_synthetic_ci_fixture.py`) baked in, used only to prove the packaged application
+starts and serves a governed result end to end — it is not real football data and is not a
+demo dataset:
 
 ```powershell
 docker build --tag scoutrag:1.0.1 .
@@ -64,6 +62,13 @@ SCOUTRAG_ANSWER_MODE=template
 SCOUTRAG_LOCAL_FILES_ONLY=true
 ```
 
-Exact, structured, and BM25 retrieval, fusion, governance, API, dashboard, trace, and safe answers
-remain active. Dense retrieval and external generation stay optional because a portfolio demo
-should not require model downloads, API credentials, or paid calls.
+To run the container against your own generated dataset instead, mount it and override the
+profile/evidence paths, for example:
+
+```powershell
+docker run --rm --publish 8000:8000 `
+  --volume "${PWD}/data/processed/scouting-2025-2026:/app/data/processed/scouting-2025-2026:ro" `
+  --env SCOUTRAG_PROFILES_PATH=data/processed/scouting-2025-2026/combined/player_season_profiles.parquet `
+  --env SCOUTRAG_METRIC_EVIDENCE_PATH=data/processed/scouting-2025-2026/combined/player_metric_evidence.parquet `
+  scoutrag:1.0.1
+```

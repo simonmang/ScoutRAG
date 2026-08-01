@@ -12,32 +12,72 @@ evidence governance. Its primary output is not free-form text: it is an auditabl
 LLM.
 
 > Project status: **1.0 — portfolio-ready**. All ten planned architecture phases are implemented.
-> A compact source-attributed data snapshot, one-click local dashboard, model-free Docker image,
-> and container smoke test make the complete API independently demonstrable.
+> A one-click local dashboard, Docker image, and container smoke test make the complete API
+> independently demonstrable once you have generated your own dataset.
 
 ## Try the portfolio demo
 
-No embedding download, API key, or public web service is required. On Windows, double-click:
+ScoutRAG works on real, current football statistics from
+[API-Football](https://www.api-football.com/), which requires your own free or paid API key — the
+free plan already covers a single league/season for a first look; the multi-league dataset used
+in development needs a paid plan. ScoutRAG never ships or redistributes API-Football data itself
+(their terms prohibit republishing it to third parties), so generating your own dataset is the
+first step, not an optional extra:
 
-```text
-start_dashboard.cmd
+```powershell
+# 1. Put your key in the ignored local .env file (copy from .env.example):
+#    API_FOOTBALL_KEY=...
+# 2. Generate a dataset (see "Optional API-Football data sync" below for the full workflow):
+.\sync_scouting_universe.ps1 -Groups top5 -SeasonStartYear 2025
+.\sync_scouting_universe.ps1 -Build -Groups top5 -SeasonStartYear 2025
 ```
 
-The launcher opens `http://127.0.0.1:8000` and keeps all traffic on the local machine. The
-equivalent portable Docker workflow is:
+Then, on Windows, double-click `start_dashboard.cmd`, or run the PowerShell launcher directly:
+
+```powershell
+.\start_dashboard.ps1
+```
+
+The launcher opens `http://127.0.0.1:8000` and keeps all traffic on the local machine. Exact,
+structured, and BM25 retrieval, fusion, governance, traces, safe answers, and the dashboard are
+active by default; dense retrieval and model-backed generation remain opt-in.
+
+Docker and CI use a separate, entirely invented three-player fixture
+(`scripts/build_synthetic_ci_fixture.py`) baked into the image only to prove the packaged
+application starts and serves a governed result — it is never presented as real football data:
 
 ```powershell
 docker build --tag scoutrag:1.0.1 .
 docker run --rm --publish 8000:8000 scoutrag:1.0.1
 ```
 
-The demo keeps exact, structured, and BM25 retrieval, fusion, governance, traces, safe answers,
-and the dashboard active. Dense retrieval and model-backed generation remain opt-in.
-
-The committed snapshot has 373 Bundesliga 2023/2024 player profiles and 11,563 metric records.
-Bayern Munich is preferred in the interface, but its source partition covers only two matches;
-ScoutRAG therefore reports those examples as limited instead of overstating the evidence. See the
+For an illustration of the data shape without generating anything, see the
+[synthetic example below](#what-the-generated-data-looks-like) and the
 [local demo guide](docs/local-demo.md) and [data notes](data/README.md).
+
+### What the generated data looks like
+
+This is invented, not real output, purely to show the schema shape:
+
+```json
+{
+  "player_id": "api-football:502",
+  "profile_id": "api-football:78:2025:502",
+  "player_name": "Sample Player",
+  "team_name": "Sample FC",
+  "competition_name": "Sample League",
+  "season_name": "2025/2026",
+  "position_group": "defensive_midfield",
+  "minutes_played": 2280.0,
+  "structured_features": { "pressures_per_90": 18.4, "duel_win_rate": 61.2 },
+  "percentiles": { "pressures_per_90": 88.0, "duel_win_rate": 74.8 },
+  "data_quality": 0.987
+}
+```
+
+`position_group` values like `defensive_midfield` or `center_back` come from the
+[refined tactical position](#refined-tactical-positions-from-lineup-formations) step described
+below, derived from real generated data — not invented for this example.
 
 ## Why this is not a classic document RAG
 
@@ -427,13 +467,13 @@ python -m pip install -e ".[dev,retrieval]"
 scoutrag-retrieve "pressingstarker Sechser von Bayern München mit mindestens 100 Minuten"
 ```
 
-The first dense run downloads the configured model and creates
-`data/processed/bundesliga-2023-2024/dense_index.json`. Generated embeddings remain ignored by
-Git. Later process starts reuse this profile index; `--rebuild-dense-index` explicitly refreshes
-it. A model-free baseline remains available:
+The first dense run downloads the configured model and creates a `dense_index.json` next to the
+configured profile path. Generated embeddings remain ignored by Git. Later process starts reuse
+this profile index; `--rebuild-dense-index` explicitly refreshes it. A model-free baseline remains
+available:
 
 ```powershell
-scoutrag-retrieve "Zeige das Profil von Joshua Kimmich" --disable-dense
+scoutrag-retrieve "Show the profile of Joshua Kimmich" --disable-dense
 ```
 
 Default fusion:
@@ -449,25 +489,26 @@ fused_score =
 Missing strategy signals contribute zero, so agreement across independent strategies is rewarded.
 The fused score is a relevance signal—not confidence, evidence quality, or a probability.
 
-Local real-data smoke test:
+Local real-data smoke test against the 12,713-profile combined dataset:
 
 | Measure | Result |
 | --- | ---: |
-| Indexed profiles | 373 |
+| Indexed profiles | 12,713 |
 | Embedding dimensions | 384 |
-| Bayern-filtered test result | Leon Goretzka |
-| Strategies agreeing on result | exact, structured, BM25, dense |
-| Warm dense query stage | about 69 ms |
-| Cold model load + dense query | about 108 s on local CPU |
+| Bayern defensive-midfield search | Kimmich, Goretzka, Pavlović (correct trio) |
+| Strategies agreeing on exact lookup | exact, sparse, dense |
+| Warm dense query stage | about 66 ms |
 
-The cold-start measurement includes loading the roughly 480 MB model. It is intentionally kept
-separate from warm request latency.
+Cold model load time was not re-measured for this dataset size; only the model itself (~480 MB)
+needs loading once per process, independent of profile count.
 
-## Phase 3 data pipeline
+## Optional StatsBomb data pipeline
 
-The default reference source is StatsBomb Open Data for **1. Bundesliga 2023/2024**
-(`competition_id=9`, `season_id=281`). ScoutRAG downloads only the selected season rather than
-cloning the complete upstream repository.
+API-Football is the active data source (see below); this StatsBomb Open Data pipeline is kept as
+an alternative, independently working ingestion path into the same typed schema, demonstrating
+that ScoutRAG is not tied to one provider. It is not part of the demo or the default configuration.
+The reference source is **1. Bundesliga 2023/2024** (`competition_id=9`, `season_id=281`).
+ScoutRAG downloads only the selected season rather than cloning the complete upstream repository.
 
 > Coverage limitation: this open-data competition entry contains Bayer Leverkusen's 34 league
 > matches, not all 306 Bundesliga fixtures. ScoutRAG itself is team-neutral and uses Bayern Munich
