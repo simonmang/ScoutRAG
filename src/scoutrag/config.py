@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,12 +29,17 @@ class Settings(BaseSettings):
         "data/processed/bundesliga-2023-2024/player_metric_evidence.parquet"
     )
     dense_index_path: Path = Path("data/processed/bundesliga-2023-2024/dense_index.json")
+    history_path: Path = Path("data/processed/scouting-history-2024-2026")
     dense_model_name: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     enable_dense_retrieval: bool = True
     local_files_only: bool = False
     answer_mode: Literal["template", "openai"] = "template"
     openai_model: str = "gpt-5.6-terra"
     openai_max_output_tokens: int = Field(default=800, ge=100, le=4_000)
+    api_football_key: SecretStr | None = Field(
+        default=None,
+        validation_alias="API_FOOTBALL_KEY",
+    )
 
 
 @lru_cache

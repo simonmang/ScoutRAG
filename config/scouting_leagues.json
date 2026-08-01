@@ -1,0 +1,35 @@
+{
+  "schema_version": "scoutrag-league-catalog-v1",
+  "catalog_name": "European scouting universe",
+  "entries": [
+    {"league_id": 78, "slug": "bundesliga", "competition_name": "Bundesliga", "country": "Germany", "group": "top5", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 39, "slug": "premier-league", "competition_name": "Premier League", "country": "England", "group": "top5", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 140, "slug": "la-liga", "competition_name": "La Liga", "country": "Spain", "group": "top5", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 135, "slug": "serie-a", "competition_name": "Serie A", "country": "Italy", "group": "top5", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 61, "slug": "ligue-1", "competition_name": "Ligue 1", "country": "France", "group": "top5", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+
+    {"league_id": 40, "slug": "championship", "competition_name": "Championship", "country": "England", "group": "top5_second", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 79, "slug": "2-bundesliga", "competition_name": "2. Bundesliga", "country": "Germany", "group": "top5_second", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 141, "slug": "segunda-division", "competition_name": "Segunda Division", "country": "Spain", "group": "top5_second", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 136, "slug": "serie-b", "competition_name": "Serie B", "country": "Italy", "group": "top5_second", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 62, "slug": "ligue-2", "competition_name": "Ligue 2", "country": "France", "group": "top5_second", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+
+    {"league_id": 88, "slug": "eredivisie", "competition_name": "Eredivisie", "country": "Netherlands", "group": "scouting", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 94, "slug": "primeira-liga", "competition_name": "Primeira Liga", "country": "Portugal", "group": "scouting", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 144, "slug": "jupiler-pro-league", "competition_name": "Jupiler Pro League", "country": "Belgium", "group": "scouting", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 203, "slug": "super-lig", "competition_name": "Super Lig", "country": "Turkey", "group": "scouting", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 207, "slug": "swiss-super-league", "competition_name": "Swiss Super League", "country": "Switzerland", "group": "scouting", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 218, "slug": "austrian-bundesliga", "competition_name": "Austrian Bundesliga", "country": "Austria", "group": "scouting", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 179, "slug": "scottish-premiership", "competition_name": "Scottish Premiership", "country": "Scotland", "group": "scouting", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "1st Phase"},
+    {"league_id": 119, "slug": "danish-superliga", "competition_name": "Danish Superliga", "country": "Denmark", "group": "scouting", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 113, "slug": "allsvenskan", "competition_name": "Allsvenskan", "country": "Sweden", "group": "scouting", "season_start_year": 2025, "season_name": "2025", "calendar_year": true, "round_prefix": "Regular Season"},
+    {"league_id": 103, "slug": "eliteserien", "competition_name": "Eliteserien", "country": "Norway", "group": "scouting", "season_start_year": 2025, "season_name": "2025", "calendar_year": true, "round_prefix": "Regular Season"},
+
+    {"league_id": 89, "slug": "eerste-divisie", "competition_name": "Eerste Divisie", "country": "Netherlands", "group": "scouting_second", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 95, "slug": "segunda-liga", "competition_name": "Liga Portugal 2", "country": "Portugal", "group": "scouting_second", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 145, "slug": "challenger-pro-league", "competition_name": "Challenger Pro League", "country": "Belgium", "group": "scouting_second", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 219, "slug": "austrian-2-liga", "competition_name": "Austrian 2. Liga", "country": "Austria", "group": "scouting_second", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 204, "slug": "turkish-1-lig", "competition_name": "Turkish 1. Lig", "country": "Turkey", "group": "scouting_second", "season_start_year": 2025, "season_name": "2025/2026", "round_prefix": "Regular Season"},
+    {"league_id": 114, "slug": "superettan", "competition_name": "Superettan", "country": "Sweden", "group": "scouting_second", "season_start_year": 2025, "season_name": "2025", "calendar_year": true, "round_prefix": "Regular Season"}
+  ]
+}
