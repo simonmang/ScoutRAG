@@ -12,10 +12,16 @@ from scoutrag.domain.evidence import (
 from scoutrag.domain.player import (
     MatchEvidence,
     MetricDefinition,
+    PlayerIdentity,
+    PlayerMatchPerformance,
     PlayerMetricEvidence,
+    PlayerRecentForm,
     PlayerSeasonProfile,
+    PlayerSeasonTrend,
+    PlayerTeamSeasonStint,
+    PlayerTemporalContext,
 )
-from scoutrag.domain.query import QueryIntent, QueryProfile
+from scoutrag.domain.query import QueryIntent, QueryProfile, TemporalScope
 from scoutrag.domain.retrieval import (
     CandidateRetrievalTrace,
     HybridRetrievalResult,
@@ -34,8 +40,14 @@ __all__ = [
     "MatchEvidence",
     "MetricDefinition",
     "PlayerCandidate",
+    "PlayerIdentity",
+    "PlayerMatchPerformance",
     "PlayerMetricEvidence",
+    "PlayerRecentForm",
     "PlayerSeasonProfile",
+    "PlayerSeasonTrend",
+    "PlayerTeamSeasonStint",
+    "PlayerTemporalContext",
     "QueryIntent",
     "QueryProfile",
     "RankedPlayerCandidate",
@@ -43,4 +55,5 @@ __all__ = [
     "RecommendationGovernance",
     "RetrievalTrace",
     "RuntimeMetrics",
+    "TemporalScope",
 ]

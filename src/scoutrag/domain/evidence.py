@@ -5,7 +5,11 @@ from enum import StrEnum
 from pydantic import Field, field_validator, model_validator
 
 from scoutrag.domain.base import ScoutRAGModel
-from scoutrag.domain.player import PlayerMetricEvidence
+from scoutrag.domain.player import (
+    PlayerMetricEvidence,
+    PlayerTemporalContext,
+    profile_evidence_key,
+)
 from scoutrag.domain.query import QueryProfile
 from scoutrag.domain.retrieval import RankedPlayerCandidate, RetrievalTrace
 
@@ -98,6 +102,7 @@ class RecommendationEvidencePack(ScoutRAGModel):
     candidates: list[RankedPlayerCandidate] = Field(default_factory=list)
     retrieval_trace: RetrievalTrace
     metric_evidence: dict[str, list[PlayerMetricEvidence]] = Field(default_factory=dict)
+    temporal_context: dict[str, PlayerTemporalContext] = Field(default_factory=dict)
     limitations: list[str] = Field(default_factory=list)
     missing_evidence: list[str] = Field(default_factory=list)
     runtime_metrics: RuntimeMetrics
@@ -109,7 +114,7 @@ class RecommendationEvidencePack(ScoutRAGModel):
             raise ValueError("candidate ranks must be unique")
         if ranks != list(range(1, len(ranks) + 1)):
             raise ValueError("candidates must be sorted with contiguous ranks starting at one")
-        candidate_ids = {candidate.profile.player_id for candidate in self.candidates}
+        candidate_ids = {profile_evidence_key(candidate.profile) for candidate in self.candidates}
         unknown_evidence_ids = set(self.metric_evidence) - candidate_ids
         if unknown_evidence_ids:
             raise ValueError(
@@ -120,11 +125,18 @@ class RecommendationEvidencePack(ScoutRAGModel):
             key: item.player_id
             for key, items in self.metric_evidence.items()
             for item in items
-            if item.player_id != key
+            if (item.profile_id or item.player_id) != key
         }
         if mismatched_evidence:
             raise ValueError(
-                f"metric evidence player_id must match its dictionary key: {mismatched_evidence}"
+                f"metric evidence profile key must match its dictionary key: {mismatched_evidence}"
+            )
+        candidate_player_ids = {candidate.profile.player_id for candidate in self.candidates}
+        unknown_context_ids = set(self.temporal_context) - candidate_player_ids
+        if unknown_context_ids:
+            raise ValueError(
+                "temporal context may only reference returned player IDs: "
+                f"{sorted(unknown_context_ids)}"
             )
         return self
 

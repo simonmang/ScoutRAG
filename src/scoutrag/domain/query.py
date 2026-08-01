@@ -18,6 +18,15 @@ class QueryIntent(StrEnum):
     OUT_OF_SCOPE = "out_of_scope"
 
 
+class TemporalScope(StrEnum):
+    """Requested time perspective; current season is always the default."""
+
+    CURRENT = "current"
+    RECENT_FORM = "recent_form"
+    HISTORY = "history"
+    TREND = "trend"
+
+
 class QueryProfile(ScoutRAGModel):
     """Deterministic, retrieval-oriented representation of a user query."""
 
@@ -34,6 +43,7 @@ class QueryProfile(ScoutRAGModel):
     minimum_minutes: int | None = Field(default=None, ge=0)
     result_count: int = Field(default=10, ge=1, le=100)
     expected_evidence_types: list[str] = Field(default_factory=list)
+    temporal_scope: TemporalScope = TemporalScope.CURRENT
 
     @model_validator(mode="after")
     def validate_intent_requirements(self) -> "QueryProfile":
