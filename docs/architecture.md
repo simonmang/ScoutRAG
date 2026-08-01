@@ -35,9 +35,11 @@ flowchart LR
 
     subgraph Governance["Evidence governance"]
         ME[(Metric evidence)]
+        TC[(Temporal context)]
         GO[RecommendationGovernor]
         CE --> GO
         ME --> GO
+        TC --> EP
         GO --> EP[(RecommendationEvidencePack)]
     end
 
@@ -51,6 +53,45 @@ flowchart LR
         EP --> AN --> AA
     end
 ```
+
+## Current-first temporal architecture
+
+ScoutRAG never converts a player's career into one averaged retrieval document. The active
+retrieval index contains only the configured current-season profiles. Historical data is joined
+after ranking through the stable player identity and remains visibly separated in the Evidence
+Pack.
+
+```mermaid
+flowchart LR
+    ID[(PlayerIdentity)]
+    CS[(2025/2026 PlayerSeasonProfile)]
+    HS[(2024/2025 PlayerSeasonProfile)]
+    ST[(PlayerTeamSeasonStint)]
+    MP[(PlayerMatchPerformance)]
+    RF[Last-five recent form]
+    TR[Descriptive season trends]
+    RET[Current-season retrieval and ranking]
+    GOV[Current-season governance]
+    EP[(RecommendationEvidencePack)]
+
+    ID --> CS & HS & ST & MP
+    CS --> RET --> GOV --> EP
+    MP --> RF --> EP
+    CS & HS --> TR --> EP
+    ST --> EP
+    HS -. context / fallback only .-> EP
+```
+
+The stable `player_id` represents the person. A `profile_id` represents one
+competition-season, and a `stint_id` represents one club spell inside it. A transfer within the
+same league-season therefore changes the stint list while keeping one league-season profile; a
+cross-league move creates another profile. No current and historical values are summed or
+averaged.
+
+`PlayerRecentForm` aggregates the latest five appearances and compares them only with the
+earlier matches of that same profile. `PlayerSeasonTrend` stores up to three separate
+observations and a deterministic improving/stable/declining/mixed label based on league- and
+position-relative percentiles. The label is descriptive and never a prediction.
 
 ## Phase 3 data architecture
 

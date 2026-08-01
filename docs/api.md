@@ -50,8 +50,20 @@ Content-Type: application/json
 ```
 
 The response is the canonical `RecommendationEvidencePack`: analyzed query, verdict, ranked
-candidates, metric evidence, limitations, missing evidence, retrieval trace, and runtime metrics.
-This endpoint is the preferred integration contract for evaluation and audit consumers.
+candidates, current-season metric evidence, optional separate temporal context, limitations,
+missing evidence, retrieval trace, and runtime metrics. This endpoint is the preferred
+integration contract for evaluation and audit consumers.
+
+## Player history
+
+```http
+GET /api/v1/players/api-football:502/history?match_limit=10
+```
+
+The response contains the stable player identity, newest-first season profiles, explicit club
+stints, recent-form snapshots, descriptive season trends, and a bounded list of recent
+player-match performances. It never returns a career average. `match_limit` is restricted to
+`0..50`, so the endpoint cannot accidentally serialize an entire career match table.
 
 ## Compact search
 
@@ -114,6 +126,7 @@ The dashboard at `/` calls `/api/v1/retrieve` and shows:
 - governance verdict and all ten separately scored evidence factors
 - ranked player cards with retrieval provenance
 - season-specific metric evidence and source references
+- current-first season timeline, last-five form coverage, and separate historical fallback
 - limitations, missing evidence, and warnings
 - candidate counts and per-stage timings from the retrieval trace
 - the optional deterministic answer only after the Evidence Pack is visible

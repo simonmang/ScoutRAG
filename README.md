@@ -57,8 +57,16 @@ evidence.
 ```mermaid
 flowchart TD
     SB[StatsBomb Open Data] --> DN[Download and normalize]
+    AF[API-Football] --> AS[Quota-aware cached season sync]
     DN --> PS[PlayerSeasonProfile]
     DN --> ME[PlayerMetricEvidence]
+    AS --> PS
+    AS --> ME
+    AS --> PI[PlayerIdentity]
+    AS --> ST[PlayerTeamSeasonStint]
+    AS --> MP[PlayerMatchPerformance]
+    MP --> RF[PlayerRecentForm]
+    PS --> TR[Separate multi-season trends]
     PS --> FE[Per-90 features + position percentiles]
     ME --> FE
 
@@ -84,6 +92,8 @@ flowchart TD
     FE --> SP
     FE --> DR
     ME --> G
+    RF --> EP
+    TR --> EP
 
     EP --> API[Retrieve API and dashboard]
     EP --> FC[Evidence Fact Catalog]
@@ -94,7 +104,7 @@ flowchart TD
 
     classDef implemented fill:#dcfce7,stroke:#15803d,color:#052e16;
     classDef later fill:#f3f4f6,stroke:#6b7280,color:#111827;
-    class SB,DN,PS,ME,FE,QA,QP,ER,SR,SP,DR,F,CP,RR,G,EP,API,AG,AA implemented;
+    class SB,DN,PS,ME,PI,ST,MP,RF,TR,FE,QA,QP,ER,SR,SP,DR,F,CP,RR,G,EP,API,AG,AA implemented;
 ```
 
 The component boundaries are explicit and every recall strategy is independently testable. See
@@ -141,6 +151,10 @@ Implemented:
 - a transparent Data Quality Score based on coverage, minutes, features, and comparison group
 - deterministic, non-generative player profile text
 - explicit multi-team transfer provenance with a minutes-based primary team
+- stable API-Football player identities shared across clubs, competitions, and seasons
+- separate club-season stints and typed per-fixture player performances
+- deterministic last-five-match form windows against the prior same-season baseline
+- current-first multi-season trends that preserve every season value instead of averaging them
 - cross-record validation for coverage, duplicates, season integrity, and minutes
 - Zstandard-compressed Parquet artifacts and a SHA-256 reproducibility manifest
 - `scoutrag-data` command-line interface
@@ -168,6 +182,7 @@ Implemented:
 - `scoutrag-govern` and `scoutrag-govern-evaluate` command-line interfaces
 - lazy, thread-safe API composition over the same governed retrieval pipeline
 - separate `POST /api/v1/retrieve`, `/api/v1/search`, and `/api/v1/answer` contracts
+- `GET /api/v1/players/{player_id}/history` for bounded match, form, stint, and trend evidence
 - a deterministic verdict-aware `TemplateAnswerGenerator` with safe abstention
 - responsive explainability dashboard with candidate details and retrieval trace
 - HTTP integration tests using the real model-free pipeline boundary
@@ -198,10 +213,16 @@ Deliberately not implemented yet:
 Retrieval remains fully usable without an LLM. `SCOUTRAG_ANSWER_MODE=template` is the default.
 The optional model adapter can be enabled independently:
 
+For the easiest local Windows setup, place the key in the ignored local `.env` file as
+`OPENAI_API_KEY=...`, then double-click `start_dashboard_ai.cmd`. The launcher reads the key only
+into the running process and starts with `gpt-5.6-luna`. The regular `start_dashboard.cmd`
+continues to use the free deterministic template mode.
+
 ```powershell
 python -m pip install -e ".[llm]"
 $env:OPENAI_API_KEY = "..."
 $env:SCOUTRAG_ANSWER_MODE = "openai"
+$env:SCOUTRAG_OPENAI_MODEL = "gpt-5.6-luna"
 uvicorn scoutrag.main:app --reload
 ```
 
@@ -519,6 +540,127 @@ Validated local reference build:
 Raw and generated data are excluded from Git. Small representative fixtures remain in the test
 suite, so CI is deterministic and does not depend on the network.
 
+## Optional API-Football data sync
+
+API-Football broadens the portfolio demo with recent, complete team or league season aggregates.
+The API key remains in the ignored local `.env` file and is sent only in the
+`x-apisports-key` header:
+
+```dotenv
+API_FOOTBALL_KEY=HIER_DEINEN_API_FOOTBALL_KEY_EINFUEGEN
+```
+
+Verify the connection and inspect the current subscription/quota (one provider request):
+
+```powershell
+scoutrag-data api-football-status
+```
+
+The small aggregate sync remains useful for development: it loads Bayern Munich (team 157),
+Bundesliga 2024/2025, caches the provider pages locally, and disables misleading league
+percentiles for this team-only sample:
+
+```powershell
+scoutrag-data api-football-sync
+```
+
+Responses are cached below `data/raw/api_football/`; rerunning an unchanged sync reuses that
+cache. API-Football aggregates and StatsBomb event evidence remain separate. Missing pressures,
+progressive passes, or other event-only metrics are never replaced with zero or invented values.
+
+As a smaller single-league example, the fixture workflow builds just one competition-season from
+its fixture packages. The first command lists completed matches, downloads rich fixture packages
+in batches of 20 IDs, and stores one portable JSON artifact. The second command performs a
+network-free, reproducible build:
+
+```powershell
+scoutrag-data api-football-fixture-sync --league-id 78 --season 2024
+scoutrag-data api-football-fixture-build --league-id 78 --season 2024
+```
+
+The command is resumable because every list, batch, and player-identity request uses the local
+content-addressed cache. It rejects missing or unexpected fixture IDs instead of accepting a
+partial season. `/players` contributes identity fields only; historical team membership and
+performance statistics come from fixture packages so current club associations cannot
+contaminate the selected season. The actual multi-league portfolio dataset that the dashboard and
+`.env` point to is the expanded scouting universe below, not this single-league example.
+
+### European scouting universe and season history
+
+The tracked league catalog at `config/scouting_leagues.json` defines 26 intended
+competitions: the Top-5 first and second divisions plus selected development leagues in the
+Netherlands, Portugal, Belgium, Turkey, Switzerland, Austria, Scotland, Denmark, Sweden, and
+Norway. Calendar-year competitions use the explicit season label `2025`.
+
+The resumable PowerShell workflow downloads only missing cache entries, builds every league
+independently, preserves league-local position percentiles, and finally applies dataset-level
+quality gates:
+
+```powershell
+.\sync_scouting_universe.ps1
+```
+
+Use `-Build` to rebuild entirely from the local raw cache without provider requests, or select
+catalog groups such as `-Groups top5,top5_second`. `-SeasonStartYear` selects another season:
+
+```powershell
+.\sync_scouting_universe.ps1 -Download -SeasonStartYear 2024
+.\sync_scouting_universe.ps1 -Build -SeasonStartYear 2024
+.\sync_scouting_universe.ps1 -Download -SeasonStartYear 2023
+.\sync_scouting_universe.ps1 -Build -SeasonStartYear 2023
+```
+
+The current 2025/2026 build accepts 24 leagues and contains 12,713 competition-season profiles
+for 11,924 unique players, 477,131 typed metric-evidence rows, and 229,661 player-match
+performances. The 2024/2025 build accepts 23 leagues and contains 12,116 profiles, 455,145
+metric-evidence rows, and 226,880 player-match performances. Failed coverage gates remain visible
+in each combined manifest instead of silently admitting incomplete leagues.
+
+Every API-Football profile and evidence record now shares a competition-season-safe
+`profile_id`. A player transferring between countries can therefore have two valid profiles
+without their minutes, percentiles, or evidence being merged.
+
+### Refined tactical positions from lineup formations
+
+API-Football's per-appearance position is coarse (`goalkeeper`/`defender`/`midfielder`/
+`forward`), too coarse for role-specific scouting queries such as "Sechser" or
+"Innenverteidiger". Each cached fixture also reports the starting team's formation (for
+example `4-2-3-1`) and every starter's `row:column` grid slot within it. Combined across a
+player's starts in one season, that is enough to distinguish a fullback from a centre-back or a
+holding midfielder from an attacking one — without a second data source or any cross-provider
+player-identity matching.
+
+Refinement only narrows a coarse group into one of its own sub-roles and never contradicts the
+provider's own tag; it is limited to back-four formations with a clear majority role across
+enough starts, and falls back to the coarse group otherwise (`scoutrag.data.position_inference`).
+For the 2025/2026 build, 3,975 of 12,713 profiles (about 31%) received a refined position; the
+rest keep the coarse provider group rather than a guessed one.
+
+Build the read-only history artifact after at least two season builds:
+
+```powershell
+scoutrag-data api-football-history-build `
+  --input data/processed/scouting-2025-2026/combined `
+  --input data/processed/scouting-2024-2025/combined `
+  --output data/processed/scouting-history-2024-2026
+```
+
+The current local two-season history contains 24,829 separate season profiles for 15,134 players,
+456,541 match performances, and 320,098 metric trends. Retrieval still ranks only the configured
+2025/2026 profile artifact. History is attached afterward as auditable context: it can explain a
+small current sample or a form dip, but it never upgrades a weak current-season governance
+verdict and is never blended into a cross-season average.
+
+Transfer handling follows three levels:
+
+1. `PlayerIdentity` is the stable person record.
+2. `PlayerSeasonProfile` stores one competition and season; cross-league moves remain separate.
+3. `PlayerTeamSeasonStint` stores every club spell inside that competition-season.
+
+Recent form uses the latest five stored appearances and compares them only with the earlier
+matches of the same season. Trends compare separate season observations and are explicitly
+descriptive, not predictive.
+
 ## Domain contracts
 
 The central API-independent result is:
@@ -530,6 +672,7 @@ class RecommendationEvidencePack:
     candidates: list[RankedPlayerCandidate]
     retrieval_trace: RetrievalTrace
     metric_evidence: dict[str, list[PlayerMetricEvidence]]
+    temporal_context: dict[str, PlayerTemporalContext]
     limitations: list[str]
     missing_evidence: list[str]
     runtime_metrics: RuntimeMetrics
