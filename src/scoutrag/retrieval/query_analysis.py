@@ -100,22 +100,57 @@ OUT_OF_SCOPE_PATTERNS = (
     "wetter",
 )
 
+
+# Keyed by _normalize(profile.team_name) exactly, since _team_aliases() looks up aliases by
+# that normalized real name, not by any of the alias phrasings themselves. A key that doesn't
+# match _normalize(team_name) verbatim (e.g. an English "munich" for the real "münchen") is
+# silently unreachable - _team_aliases() just falls back to the single exact name instead.
 TEAM_ALIASES = {
-    "bayern munich": (
+    "bayern münchen": (
         "bayern",
         "bayern munich",
         "bayern münchen",
+        "bayern muenchen",
         "fc bayern münchen",
+        "fc bayern muenchen",
         "fc bayern",
     ),
 }
 
+# Canonical keys match scoutrag.domain.player.PlayerSeasonProfile.competition_name exactly, as
+# produced by the 24-competition scouting universe catalog (config/scouting_leagues.json) plus
+# the optional StatsBomb pipeline's "1. Bundesliga". Aliases add common German/English phrasings
+# and ASCII umlaut substitutes; _matches_any does a bidirectional substring match, so an alias
+# only needs to disambiguate query wording, not restate the canonical name.
 COMPETITION_ALIASES: dict[str, tuple[str, ...]] = {
-    "1. Bundesliga": ("1. bundesliga", "bundesliga"),
+    "1. Bundesliga": ("1. bundesliga",),
+    "2. Bundesliga": ("2. bundesliga", "2 bundesliga", "zweite bundesliga"),
     "Premier League": ("premier league",),
-    "La Liga": ("la liga", "laliga"),
+    "Championship": ("championship",),
+    "La Liga": ("la liga", "laliga", "primera division"),
+    "Segunda Division": ("segunda division", "segunda división", "la liga 2"),
     "Serie A": ("serie a",),
+    "Serie B": ("serie b",),
     "Ligue 1": ("ligue 1",),
+    "Ligue 2": ("ligue 2",),
+    "Eredivisie": ("eredivisie",),
+    "Eerste Divisie": ("eerste divisie",),
+    "Primeira Liga": ("primeira liga", "liga portugal"),
+    "Jupiler Pro League": ("jupiler pro league", "belgian pro league"),
+    "Challenger Pro League": ("challenger pro league",),
+    "Super Lig": ("süper lig", "sueper lig", "super lig", "türkische liga", "tuerkische liga"),
+    "Turkish 1. Lig": ("turkish 1. lig", "1. lig", "tff 1. lig"),
+    "Swiss Super League": ("swiss super league", "schweizer super league"),
+    "Austrian Bundesliga": (
+        "austrian bundesliga",
+        "österreichische bundesliga",
+        "oesterreichische bundesliga",
+    ),
+    "Scottish Premiership": ("scottish premiership",),
+    "Danish Superliga": ("danish superliga", "superliga"),
+    "Allsvenskan": ("allsvenskan",),
+    "Superettan": ("superettan",),
+    "Eliteserien": ("eliteserien",),
 }
 
 

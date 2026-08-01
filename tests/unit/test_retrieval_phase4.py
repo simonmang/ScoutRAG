@@ -59,7 +59,7 @@ def profiles() -> list[PlayerSeasonProfile]:
         profile(
             "1",
             "Joshua Kimmich",
-            "Bayern Munich",
+            "Bayern München",
             "defensive_midfield",
             minutes=2_000,
             pressures=17,
@@ -68,7 +68,7 @@ def profiles() -> list[PlayerSeasonProfile]:
         profile(
             "2",
             "Aleksandar Pavlović",
-            "Bayern Munich",
+            "Bayern München",
             "defensive_midfield",
             minutes=1_100,
             pressures=11,
@@ -86,7 +86,7 @@ def profiles() -> list[PlayerSeasonProfile]:
         profile(
             "4",
             "Manuel Neuer",
-            "Bayern Munich",
+            "Bayern München",
             "goalkeeper",
             minutes=2_200,
             pressures=0.2,
@@ -158,9 +158,9 @@ def test_team_name_becomes_a_hard_filter(profiles: list[PlayerSeasonProfile]) ->
     candidates = StructuredFeaturePlayerRetriever(profiles).retrieve(query, limit=10)
     exact_candidates = ExactPlayerRetriever(profiles).retrieve(query, limit=10)
 
-    assert query.team_filters == ["Bayern Munich"]
-    assert {candidate.profile.team_name for candidate in candidates} == {"Bayern Munich"}
-    assert {candidate.profile.team_name for candidate in exact_candidates} == {"Bayern Munich"}
+    assert query.team_filters == ["Bayern München"]
+    assert {candidate.profile.team_name for candidate in candidates} == {"Bayern München"}
+    assert {candidate.profile.team_name for candidate in exact_candidates} == {"Bayern München"}
 
 
 def test_short_bayern_alias_becomes_a_hard_filter(
@@ -168,7 +168,7 @@ def test_short_bayern_alias_becomes_a_hard_filter(
 ) -> None:
     query = RuleBasedQueryAnalyzer(profiles).analyze("Bayern-Sechser mit mindestens 900 Minuten")
 
-    assert query.team_filters == ["Bayern Munich"]
+    assert query.team_filters == ["Bayern München"]
     assert query.requested_positions == ["defensive_midfield"]
 
 
