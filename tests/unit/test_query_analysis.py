@@ -26,9 +26,7 @@ def test_command_verb_is_not_mistaken_for_a_same_named_player() -> None:
     # command phrasing "Show the profile of ..." must not also match him.
     profiles = [_profile("1", "Joshua Kimmich"), _profile("2", "Show")]
 
-    analyzed = RuleBasedQueryAnalyzer(profiles).analyze(
-        "Show the profile of Joshua Kimmich"
-    )
+    analyzed = RuleBasedQueryAnalyzer(profiles).analyze("Show the profile of Joshua Kimmich")
 
     assert analyzed.named_players == ["Joshua Kimmich"]
     assert analyzed.intent.value == "exact_player_lookup"
@@ -37,9 +35,7 @@ def test_command_verb_is_not_mistaken_for_a_same_named_player() -> None:
 def test_command_verb_still_yields_exact_lookup_intent_without_collision() -> None:
     profiles = [_profile("1", "Joshua Kimmich")]
 
-    analyzed = RuleBasedQueryAnalyzer(profiles).analyze(
-        "Show the profile of Joshua Kimmich"
-    )
+    analyzed = RuleBasedQueryAnalyzer(profiles).analyze("Show the profile of Joshua Kimmich")
 
     assert analyzed.named_players == ["Joshua Kimmich"]
     assert analyzed.intent.value == "exact_player_lookup"

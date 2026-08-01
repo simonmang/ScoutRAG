@@ -49,6 +49,11 @@ def test_governed_pipeline_returns_auditable_evidence_pack() -> None:
     assert pack.retrieval_trace.candidates_before_reranking == 1
 
 
+def _season_id(profile: PlayerSeasonProfile) -> str:
+    assert profile.profile_id is not None
+    return profile.profile_id.rsplit(":", 1)[0]
+
+
 def test_same_player_in_two_leagues_keeps_evidence_separate() -> None:
     profiles = [
         PlayerSeasonProfile(
@@ -75,7 +80,7 @@ def test_same_player_in_two_leagues_keeps_evidence_separate() -> None:
         PlayerMetricEvidence(
             player_id=profile.player_id,
             profile_id=profile.profile_id,
-            season_id=profile.profile_id.rsplit(":", 1)[0],
+            season_id=_season_id(profile),
             metric_name="passes_per_90",
             raw_value=value,
             normalized_value=value,
