@@ -12,7 +12,10 @@ from scoutrag.domain.evidence import (
 from scoutrag.domain.player import (
     MatchEvidence,
     MetricDefinition,
+    PlayerCareerEvents,
+    PlayerExternalContext,
     PlayerIdentity,
+    PlayerInjurySpell,
     PlayerMatchPerformance,
     PlayerMetricEvidence,
     PlayerRecentForm,
@@ -20,6 +23,8 @@ from scoutrag.domain.player import (
     PlayerSeasonTrend,
     PlayerTeamSeasonStint,
     PlayerTemporalContext,
+    PlayerTransfer,
+    PlayerTrophy,
 )
 from scoutrag.domain.query import QueryIntent, QueryProfile, TemporalScope
 from scoutrag.domain.retrieval import (
@@ -40,7 +45,10 @@ __all__ = [
     "MatchEvidence",
     "MetricDefinition",
     "PlayerCandidate",
+    "PlayerCareerEvents",
+    "PlayerExternalContext",
     "PlayerIdentity",
+    "PlayerInjurySpell",
     "PlayerMatchPerformance",
     "PlayerMetricEvidence",
     "PlayerRecentForm",
@@ -48,6 +56,8 @@ __all__ = [
     "PlayerSeasonTrend",
     "PlayerTeamSeasonStint",
     "PlayerTemporalContext",
+    "PlayerTransfer",
+    "PlayerTrophy",
     "QueryIntent",
     "QueryProfile",
     "RankedPlayerCandidate",

@@ -11,6 +11,7 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
+import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
 
 from scoutrag.config import Settings
@@ -20,6 +21,7 @@ from scoutrag.data.api_football import (
     ApiFootballProtocolError,
     ApiFootballResponse,
 )
+from scoutrag.data.api_football_career_events import fetch_career_events
 from scoutrag.data.api_football_fixture_profiles import (
     build_api_football_fixture_profiles,
 )
@@ -37,6 +39,12 @@ from scoutrag.data.models import DownloadSummary, PipelineResult
 from scoutrag.data.pipeline import Phase3DataPipeline
 from scoutrag.data.statsbomb import StatsBombOpenDataDownloader
 from scoutrag.data.temporal import build_season_trends
+from scoutrag.data.wikidata_enrichment import (
+    CachedSparqlClient,
+    WikidataCandidate,
+    WikidataEnrichmentError,
+    enrich_players,
+)
 from scoutrag.domain.player import (
     MetricDefinition,
     PlayerIdentity,
@@ -72,6 +80,14 @@ DEFAULT_API_FOOTBALL_FIXTURE_REQUEST_BUDGET = 100
 DEFAULT_API_FOOTBALL_FIXTURE_MAX_PAGES = 10
 DEFAULT_API_FOOTBALL_PLAYER_MAX_PAGES = 50
 DEFAULT_API_FOOTBALL_PRO_THROTTLE_SECONDS = 0.25
+DEFAULT_WIKIDATA_CACHE_ROOT = Path("data/raw")
+DEFAULT_WIKIDATA_OUTPUT = DEFAULT_API_FOOTBALL_SCOUTING_COMBINED / "player_external_context.parquet"
+DEFAULT_WIKIDATA_BATCH_SIZE = 60
+DEFAULT_WIKIDATA_THROTTLE_SECONDS = 2.0
+DEFAULT_CAREER_EVENTS_OUTPUT = (
+    DEFAULT_API_FOOTBALL_SCOUTING_COMBINED / "player_career_events.parquet"
+)
+DEFAULT_CAREER_EVENTS_REQUEST_BUDGET = 7000
 
 
 def _add_competition_arguments(parser: argparse.ArgumentParser) -> None:
@@ -346,6 +362,54 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("data/processed/scouting-history"),
     )
+
+    wikidata_parser = subparsers.add_parser(
+        "wikidata-enrich",
+        help="Add optional CC0 Wikidata context (caps, honours, footedness) to a built dataset.",
+    )
+    wikidata_parser.add_argument(
+        "--input",
+        type=Path,
+        default=DEFAULT_API_FOOTBALL_SCOUTING_COMBINED,
+        help="Directory containing player_identities.parquet and player_season_profiles.parquet.",
+    )
+    wikidata_parser.add_argument("--output", type=Path, default=DEFAULT_WIKIDATA_OUTPUT)
+    wikidata_parser.add_argument("--cache", type=Path, default=DEFAULT_WIKIDATA_CACHE_ROOT)
+    wikidata_parser.add_argument("--batch-size", type=int, default=DEFAULT_WIKIDATA_BATCH_SIZE)
+    wikidata_parser.add_argument(
+        "--throttle-seconds",
+        type=float,
+        default=DEFAULT_WIKIDATA_THROTTLE_SECONDS,
+        help="Minimum interval between SPARQL requests, as a courteous default for a shared "
+        "public endpoint.",
+    )
+
+    career_events_parser = subparsers.add_parser(
+        "api-football-career-events",
+        help="Add transfers, trophies, and injury history from the same licensed API-Football "
+        "subscription (three requests per player; resumable across days via the request cache).",
+    )
+    career_events_parser.add_argument(
+        "--input",
+        type=Path,
+        default=DEFAULT_API_FOOTBALL_SCOUTING_COMBINED,
+        help="Directory containing player_identities.parquet.",
+    )
+    career_events_parser.add_argument("--output", type=Path, default=DEFAULT_CAREER_EVENTS_OUTPUT)
+    career_events_parser.add_argument("--cache", type=Path, default=DEFAULT_API_FOOTBALL_CACHE_ROOT)
+    career_events_parser.add_argument(
+        "--request-budget",
+        type=int,
+        default=DEFAULT_CAREER_EVENTS_REQUEST_BUDGET,
+        help="Stops cleanly and reports remaining players once reached; rerun later to resume "
+        "(already-cached players cost nothing).",
+    )
+    career_events_parser.add_argument(
+        "--throttle-seconds",
+        type=float,
+        default=DEFAULT_API_FOOTBALL_PRO_THROTTLE_SECONDS,
+    )
+    career_events_parser.add_argument("--timeout", type=float, default=30.0)
     return parser
 
 
@@ -363,6 +427,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _api_football_fixture_merge(args)
     if args.command == "api-football-history-build":
         return _api_football_history_build(args)
+    if args.command == "wikidata-enrich":
+        return _wikidata_enrich(args)
+    if args.command == "api-football-career-events":
+        return _api_football_career_events(args)
     return _statsbomb_command(args)
 
 
@@ -979,6 +1047,136 @@ def _api_football_history_build(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     return 0
+
+
+def _wikidata_enrich(args: argparse.Namespace) -> int:
+    """Add optional CC0 Wikidata context to an already-built dataset, in place."""
+
+    try:
+        identity_path = args.input / "player_identities.parquet"
+        profiles_path = args.input / "player_season_profiles.parquet"
+        if not identity_path.exists() or not profiles_path.exists():
+            raise FileNotFoundError(f"missing player_identities/season_profiles under {args.input}")
+
+        current_teams: dict[str, frozenset[str]] = {}
+        for row in _typed_parquet_rows(profiles_path):
+            team_names = row.get("team_names") or []
+            current_teams.setdefault(row["player_id"], frozenset())
+            current_teams[row["player_id"]] = current_teams[row["player_id"]] | frozenset(
+                team_names
+            )
+
+        candidates = [
+            WikidataCandidate(
+                player_id=identity.player_id,
+                player_name=identity.player_name,
+                date_of_birth=identity.date_of_birth,
+                current_team_names=current_teams.get(identity.player_id, frozenset()),
+            )
+            for row in _typed_parquet_rows(identity_path)
+            if (identity := PlayerIdentity.model_validate(row)).date_of_birth is not None
+        ]
+
+        client = CachedSparqlClient(cache_dir=args.cache, throttle_seconds=args.throttle_seconds)
+        contexts = enrich_players(candidates, client=client, batch_size=args.batch_size)
+
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        _write_external_context_parquet(args.output, contexts)
+
+        _print_json(
+            {
+                "candidates_considered": len(candidates),
+                "confirmed_matches": len(contexts),
+                "with_footedness": sum(1 for item in contexts if item.footedness),
+                "with_national_team": sum(1 for item in contexts if item.national_team_name),
+                "with_honours": sum(1 for item in contexts if item.honours),
+                "with_earlier_clubs": sum(1 for item in contexts if item.earlier_clubs),
+                "output": str(args.output),
+            }
+        )
+    except (OSError, ValueError, KeyError, WikidataEnrichmentError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
+def _write_external_context_parquet(path: Path, contexts: list[Any]) -> None:
+    if not contexts:
+        raise ValueError("no confirmed Wikidata matches to write")
+    records = []
+    for item in contexts:
+        record = item.model_dump(mode="json")
+        record["honours_json"] = json.dumps(record.pop("honours"), ensure_ascii=False)
+        record["earlier_clubs_json"] = json.dumps(record.pop("earlier_clubs"), ensure_ascii=False)
+        records.append(record)
+    table = pa.Table.from_pylist(records)
+    pq.write_table(table, path, compression="zstd")
+
+
+def _api_football_career_events(args: argparse.Namespace) -> int:
+    """Add transfers, trophies, and injury history; resumable across daily quota resets."""
+
+    api_key = _api_football_key()
+    if api_key is None:
+        return _missing_api_football_key()
+    try:
+        identity_path = args.input / "player_identities.parquet"
+        if not identity_path.exists():
+            raise FileNotFoundError(f"missing player_identities.parquet under {args.input}")
+        player_ids = [
+            PlayerIdentity.model_validate(row).player_id
+            for row in _typed_parquet_rows(identity_path)
+        ]
+
+        client = ApiFootballClient(
+            api_key,
+            cache_dir=args.cache,
+            request_budget=args.request_budget,
+            max_pages=1,
+            min_request_interval_seconds=args.throttle_seconds,
+            timeout=args.timeout,
+        )
+        completed, remaining = fetch_career_events(client, player_ids)
+
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        _write_career_events_parquet(args.output, completed)
+
+        _print_json(
+            {
+                "players_considered": len(player_ids),
+                "completed": len(completed),
+                "remaining": len(remaining),
+                "with_transfers": sum(1 for item in completed if item.transfers),
+                "with_trophies": sum(1 for item in completed if item.trophies),
+                "with_injury_history": sum(1 for item in completed if item.injury_spells),
+                "network_requests_made": client.network_requests_made,
+                "output": str(args.output),
+                "note": (
+                    "Rerun this exact command again (e.g. tomorrow) to continue; "
+                    "already-completed players resolve from cache at no quota cost."
+                    if remaining
+                    else "All players completed."
+                ),
+            }
+        )
+    except (OSError, ValueError, KeyError, ApiFootballError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
+def _write_career_events_parquet(path: Path, events: list[Any]) -> None:
+    if not events:
+        raise ValueError("no career events to write")
+    records = []
+    for item in events:
+        record = item.model_dump(mode="json")
+        record["transfers_json"] = json.dumps(record.pop("transfers"), ensure_ascii=False)
+        record["trophies_json"] = json.dumps(record.pop("trophies"), ensure_ascii=False)
+        record["injury_spells_json"] = json.dumps(record.pop("injury_spells"), ensure_ascii=False)
+        records.append(record)
+    table = pa.Table.from_pylist(records)
+    pq.write_table(table, path, compression="zstd")
 
 
 def _api_football_key() -> str | None:

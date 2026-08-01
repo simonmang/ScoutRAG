@@ -675,10 +675,42 @@ holding midfielder from an attacking one — without a second data source or any
 player-identity matching.
 
 Refinement only narrows a coarse group into one of its own sub-roles and never contradicts the
-provider's own tag; it is limited to back-four formations with a clear majority role across
-enough starts, and falls back to the coarse group otherwise (`scoutrag.data.position_inference`).
-For the 2025/2026 build, 3,975 of 12,713 profiles (about 31%) received a refined position; the
+provider's own tag. The defensive and forward lines are resolved for back-three, back-four, and
+back-five formations alike, since a back line's own centre-back/wide split is unambiguous
+regardless of size; midfield lines are resolved only for back-four formations, where a back
+three or five's midfield line could itself hide wing-backs (`scoutrag.data.position_inference`).
+For the 2025/2026 build, 4,521 of 12,713 profiles (about 36%) received a refined position; the
 rest keep the coarse provider group rather than a guessed one.
+
+### Optional Wikidata biography enrichment
+
+[Wikidata](https://www.wikidata.org/wiki/Wikidata:Licensing) is CC0 (public domain), unlike
+API-Football or Transfermarkt, so its structured data can be reused freely. An optional sync
+step adds national-team caps, footedness, career honours, and pre-tracked club history to a
+player's identity — only fields API-Football does not already provide, never a duplicate of
+tracked stats or the current club:
+
+```powershell
+scoutrag-data wikidata-enrich --input data/processed/scouting-2025-2026/combined
+```
+
+A player is matched by exact name and only kept when the entity's date of birth agrees exactly
+with the value already trusted from API-Football; an unresolved or ambiguous name stays
+unenriched. See [data notes](data/README.md) for measured match rates and coverage caveats.
+
+### Optional API-Football career events
+
+Real transfer fees, official trophies, and injury history come from the same licensed
+API-Football subscription already used for statistics — no second provider or identity matching:
+
+```powershell
+scoutrag-data api-football-career-events --input data/processed/scouting-2025-2026/combined
+```
+
+Three requests per player means the full catalog exceeds one day's quota on most plans; the
+command stops cleanly and reports how many players remain, and rerunning it later resumes for
+free through the same request cache the rest of the pipeline already uses. See
+[data notes](data/README.md) for details.
 
 Build the read-only history artifact after at least two season builds:
 

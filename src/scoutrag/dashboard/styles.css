@@ -1159,6 +1159,23 @@ footer a {
   color: #934f43;
 }
 
+.external-context {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.7rem;
+}
+
+.external-context-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.external-context-list li {
+  padding: 2px 0;
+}
+
 .metric-table {
   width: 100%;
   border-collapse: collapse;

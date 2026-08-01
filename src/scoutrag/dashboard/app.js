@@ -388,6 +388,64 @@ function renderTemporalContext(context, currentProfile, requestedMetrics) {
     });
     section.append(trendList);
   }
+
+  const external = context.external_context;
+  if (external) {
+    const externalSection = node("div", "external-context");
+    const title = document.createElement("strong");
+    title.textContent = "Biography (Wikidata, CC0)";
+    externalSection.append(title);
+    const facts = [
+      external.national_team_name
+        ? `${external.national_team_name} · ${external.national_team_caps ?? 0} caps`
+        : null,
+      external.footedness ? `Footedness: ${external.footedness}` : null,
+      external.earlier_clubs?.length ? `Earlier clubs: ${external.earlier_clubs.join(", ")}` : null,
+      external.honours?.length ? `Honours: ${external.honours.join(", ")}` : null,
+    ].filter(Boolean);
+    if (facts.length) {
+      const list = node("ul", "external-context-list");
+      facts.forEach((fact) => {
+        const item = document.createElement("li");
+        item.textContent = fact;
+        list.append(item);
+      });
+      externalSection.append(list);
+      section.append(externalSection);
+    }
+  }
+
+  const career = context.career_events;
+  if (career) {
+    const careerSection = node("div", "external-context");
+    const title = document.createElement("strong");
+    title.textContent = "Career events (API-Football)";
+    careerSection.append(title);
+    const facts = [
+      career.transfers?.length
+        ? `Transfers: ${career.transfers
+            .map((item) => `${item.from_team} → ${item.to_team} (${item.fee_text})`)
+            .join("; ")}`
+        : null,
+      career.trophies?.length
+        ? `Trophies: ${career.trophies.length} recorded (latest: ${career.trophies[0].competition_name} ${career.trophies[0].season}, ${career.trophies[0].place})`
+        : null,
+      career.injury_spells?.length
+        ? `Injury history: ${career.injury_spells.length} recorded spell(s)`
+        : null,
+    ].filter(Boolean);
+    if (facts.length) {
+      const list = node("ul", "external-context-list");
+      facts.forEach((fact) => {
+        const item = document.createElement("li");
+        item.textContent = fact;
+        list.append(item);
+      });
+      careerSection.append(list);
+      section.append(careerSection);
+    }
+  }
+
   return section;
 }
 

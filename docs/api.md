@@ -61,9 +61,12 @@ GET /api/v1/players/api-football:502/history?match_limit=10
 ```
 
 The response contains the stable player identity, newest-first season profiles, explicit club
-stints, recent-form snapshots, descriptive season trends, and a bounded list of recent
-player-match performances. It never returns a career average. `match_limit` is restricted to
-`0..50`, so the endpoint cannot accidentally serialize an entire career match table.
+stints, recent-form snapshots, descriptive season trends, a bounded list of recent player-match
+performances, optional CC0 Wikidata biography context (national-team caps, footedness, honours,
+pre-tracked club history) where a confirmed match exists, and optional career events (transfers
+with real fees, official trophies, injury history) from the same licensed API-Football
+subscription used for statistics. It never returns a career average. `match_limit` is restricted
+to `0..50`, so the endpoint cannot accidentally serialize an entire career match table.
 
 ## Compact search
 

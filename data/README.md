@@ -82,6 +82,44 @@ It persists stable identities, club-season stints, bounded recent-form snapshots
 match performances, and descriptive season trends. These generated artifacts remain ignored by
 Git; only schemas, code, tests, catalog, and reproduction commands belong in the repository.
 
+### Optional Wikidata biography enrichment
+
+Wikidata's structured data is [CC0 (public domain)](https://www.wikidata.org/wiki/Wikidata:Licensing),
+unlike API-Football or Transfermarkt, so it can be used freely. It adds only what API-Football does
+not have — national-team caps, footedness, career honours, and club history predating the tracked
+seasons — and never duplicates a field ScoutRAG already tracks (name, birth date/place,
+nationality, height, weight, current club, season stats):
+
+```powershell
+scoutrag-data wikidata-enrich --input data/processed/scouting-2025-2026/combined
+```
+
+A player is matched by exact name, then the match is only kept when the Wikidata entity's date of
+birth agrees exactly with the value already trusted from API-Football. An unresolved or ambiguous
+name is left unenriched rather than guessed. On a random sample of 20 players across all 24
+leagues (not just star names), about 75-80% matched with a confirmed birth date; a global check
+found only ~1,800 footballers on all of Wikidata have footedness recorded at all, so that specific
+field stays sparse regardless of match rate. Responses are cached under `data/raw/wikidata/`, and
+requests are throttled by default as a courtesy to the shared public endpoint.
+
+### Optional API-Football career events
+
+Transfers, official trophies, and injury history come from the same already-licensed API-Football
+subscription used for statistics — no second provider, no name/date-of-birth matching, since every
+record already shares the pipeline's numeric player ID:
+
+```powershell
+scoutrag-data api-football-career-events --input data/processed/scouting-2025-2026/combined
+```
+
+Each player needs three requests (`/transfers`, `/trophies`, `/sidelined`), so the full 12,713-player
+catalog exceeds a single day's quota on most plans. The command stops cleanly once the request
+budget or the provider's own daily quota is reached and reports how many players remain; rerunning
+the exact same command on a later day resumes for free for every already-completed player, since
+`ApiFootballClient`'s existing content-addressed cache under `data/raw/api_football/` answers those
+without a new network call. `type` on a transfer is the provider's raw fee text (for example
+`"€ 8.5M"`, `"Free"`, `"Loan"`, `"N/A"`) and is stored as-is rather than parsed into a number.
+
 Phase 4 creates an additional ignored `dense_index.json` artifact per profile set. It contains the
 selected model name, season-safe profile keys, and document embeddings. Rebuild it after changing
 the player profiles or embedding model:

@@ -11,6 +11,8 @@ import pyarrow.parquet as pq  # type: ignore[import-untyped]
 
 from scoutrag.domain.base import ScoutRAGModel
 from scoutrag.domain.player import (
+    PlayerCareerEvents,
+    PlayerExternalContext,
     PlayerIdentity,
     PlayerMatchPerformance,
     PlayerRecentForm,
@@ -93,6 +95,18 @@ class PlayerHistoryStore:
             PlayerMatchPerformance,
             unique_ids,
         )
+        external_context_path = self.root / "player_external_context.parquet"
+        external_contexts = (
+            _load_models_many(external_context_path, PlayerExternalContext, unique_ids)
+            if external_context_path.exists()
+            else {}
+        )
+        career_events_path = self.root / "player_career_events.parquet"
+        career_events = (
+            _load_models_many(career_events_path, PlayerCareerEvents, unique_ids)
+            if career_events_path.exists()
+            else {}
+        )
         return {
             player_id: _context(
                 player_id,
@@ -102,6 +116,8 @@ class PlayerHistoryStore:
                 forms.get(player_id, []),
                 trends.get(player_id, []),
                 matches.get(player_id, []),
+                external_contexts.get(player_id, []),
+                career_events.get(player_id, []),
                 match_limit=match_limit,
             )
             for player_id in unique_ids
@@ -145,6 +161,8 @@ def _context(
     forms: list[PlayerRecentForm],
     trends: list[PlayerSeasonTrend],
     matches: list[PlayerMatchPerformance],
+    external_contexts: list[PlayerExternalContext],
+    career_events: list[PlayerCareerEvents],
     *,
     match_limit: int,
 ) -> PlayerTemporalContext:
@@ -152,6 +170,8 @@ def _context(
     return PlayerTemporalContext(
         player_id=player_id,
         identity=identities[0] if identities else None,
+        external_context=external_contexts[0] if external_contexts else None,
+        career_events=career_events[0] if career_events else None,
         season_profiles=sorted(
             profiles,
             key=lambda item: (int(item.season_name[:4]), item.minutes_played),

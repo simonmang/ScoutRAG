@@ -218,6 +218,60 @@ class PlayerSeasonTrend(ScoutRAGModel):
         return self
 
 
+class PlayerExternalContext(ScoutRAGModel):
+    """Optional Wikidata-sourced biography, never duplicating tracked stats or club data.
+
+    Only ever built for a confirmed match (exact name and exact date of birth agreement);
+    an unresolved or ambiguous player simply has no record instead of a guessed one.
+    """
+
+    player_id: str = Field(min_length=1)
+    wikidata_id: str = Field(min_length=1, pattern=r"^Q\d+$")
+    footedness: str | None = Field(default=None, min_length=1)
+    national_team_name: str | None = Field(default=None, min_length=1)
+    national_team_caps: int | None = Field(default=None, ge=0)
+    honours: list[str] = Field(default_factory=list)
+    earlier_clubs: list[str] = Field(default_factory=list)
+    source_reference: str = Field(min_length=1)
+
+
+class PlayerTransfer(ScoutRAGModel):
+    """One recorded transfer, loan, or free move between two clubs."""
+
+    transfer_date: date | None = None
+    fee_text: str = Field(min_length=1)
+    from_team: str = Field(min_length=1)
+    to_team: str = Field(min_length=1)
+
+
+class PlayerTrophy(ScoutRAGModel):
+    """One official competition placement from API-Football's own honours record."""
+
+    competition_name: str = Field(min_length=1)
+    country: str = Field(min_length=1)
+    season: str = Field(min_length=1)
+    place: str = Field(min_length=1)
+
+
+class PlayerInjurySpell(ScoutRAGModel):
+    """One recorded sidelined period; never a diagnosis or a fitness judgment."""
+
+    injury_type: str = Field(min_length=1)
+    start_date: date | None = None
+    end_date: date | None = None
+
+
+class PlayerCareerEvents(ScoutRAGModel):
+    """Transfers, honours, and injury history from the same licensed API-Football
+    subscription already used for statistics - no second provider, no identity matching."""
+
+    player_id: str = Field(min_length=1)
+    transfers: list[PlayerTransfer] = Field(default_factory=list)
+    trophies: list[PlayerTrophy] = Field(default_factory=list)
+    injury_spells: list[PlayerInjurySpell] = Field(default_factory=list)
+    source_reference: str = Field(min_length=1)
+
+
 class PlayerTemporalContext(ScoutRAGModel):
     """Current-first player history exposed to evidence consumers."""
 
@@ -228,6 +282,8 @@ class PlayerTemporalContext(ScoutRAGModel):
     recent_forms: list[PlayerRecentForm] = Field(default_factory=list)
     season_trends: list[PlayerSeasonTrend] = Field(default_factory=list)
     latest_matches: list[PlayerMatchPerformance] = Field(default_factory=list)
+    external_context: PlayerExternalContext | None = None
+    career_events: PlayerCareerEvents | None = None
 
     @model_validator(mode="after")
     def validate_player_identity(self) -> "PlayerTemporalContext":
@@ -244,6 +300,10 @@ class PlayerTemporalContext(ScoutRAGModel):
         }
         if self.identity is not None:
             related_ids.add(self.identity.player_id)
+        if self.external_context is not None:
+            related_ids.add(self.external_context.player_id)
+        if self.career_events is not None:
+            related_ids.add(self.career_events.player_id)
         if related_ids - {self.player_id}:
             raise ValueError("all temporal context records must belong to player_id")
         return self
