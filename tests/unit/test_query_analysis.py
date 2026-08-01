@@ -55,3 +55,37 @@ def test_german_command_verb_is_not_mistaken_for_a_same_named_player() -> None:
     analyzed = RuleBasedQueryAnalyzer(profiles).analyze("Zeige das Profil von Joshua Kimmich")
 
     assert analyzed.named_players == ["Joshua Kimmich"]
+
+
+def test_ascii_typed_umlaut_still_matches_the_real_player_name() -> None:
+    profiles = [_profile("1", "Kevin Müller")]
+
+    analyzed = RuleBasedQueryAnalyzer(profiles).analyze("Show the profile of Kevin Mueller")
+
+    assert analyzed.named_players == ["Kevin Müller"]
+
+
+def test_ascii_typed_umlaut_matches_any_team_not_only_bayern() -> None:
+    # TEAM_ALIASES only hand-lists Bayern; every other team's umlaut tolerance must come from
+    # the generic ASCII-fold applied in _team_aliases(), proven here with an unrelated club.
+    profile = PlayerSeasonProfile(
+        player_id="1",
+        player_name="Sample Player",
+        team_name="Fortuna Düsseldorf",
+        team_names=["Fortuna Düsseldorf"],
+        competition_name="2. Bundesliga",
+        season_name="2025/2026",
+        position_group="defensive_midfield",
+        minutes_played=1000,
+        structured_features={},
+        percentiles={},
+        profile_text="Sample Player | Fortuna Düsseldorf | 2. Bundesliga 2025/2026 | "
+        "defensive_midfield | 1000.0 minutes.",
+        data_quality=0.9,
+    )
+
+    analyzed = RuleBasedQueryAnalyzer([profile]).analyze(
+        "Sechser von Fortuna Duesseldorf mit mindestens 900 Minuten"
+    )
+
+    assert analyzed.team_filters == ["Fortuna Düsseldorf"]

@@ -162,12 +162,15 @@ class RuleBasedQueryAnalyzer:
 
     def analyze(self, query: str) -> QueryProfile:
         normalized = _normalize(query)
+        folded = _ascii_fold(normalized)
         name_search_text = _name_search_text(normalized)
+        folded_name_search_text = _ascii_fold(name_search_text)
         named_players = sorted(
             {
                 profile.player_name
                 for profile in self.profiles
                 if _normalize(profile.player_name) in name_search_text
+                or _ascii_fold(_normalize(profile.player_name)) in folded_name_search_text
             }
         )
         positions = [
@@ -192,6 +195,7 @@ class RuleBasedQueryAnalyzer:
                 profile.competition_name
                 for profile in self.profiles
                 if _normalize(profile.competition_name) in normalized
+                or _ascii_fold(_normalize(profile.competition_name)) in folded
             }
         )
         teams = sorted(
@@ -199,7 +203,7 @@ class RuleBasedQueryAnalyzer:
                 team_name
                 for profile in self.profiles
                 for team_name in profile.team_names
-                if any(alias in normalized for alias in _team_aliases(team_name))
+                if any(alias in normalized or alias in folded for alias in _team_aliases(team_name))
             }
         )
         seasons = _seasons(normalized)
@@ -229,6 +233,27 @@ def _normalize(value: str) -> str:
     return " ".join(normalized.split())
 
 
+# German keyboard-layout convention (u-umlaut -> ue) applied before generic accent stripping,
+# since NFD decomposition alone turns it into a bare "u", not the "ue" people actually type
+# without a German keyboard. A handful of Turkish/Nordic letters (o-slash, g-breve, dotless i,
+# s-cedilla, l-stroke) have no NFD decomposition at all and need an explicit substitute too.
+# Applied to both query and stored-name text, so it covers every team, player, and competition
+# generically instead of one hardcoded alias at a time - roughly a fifth of the current
+# dataset's player names contain a character this normalizes.
+_GERMAN_DIGRAPHS = str.maketrans({"ü": "ue", "ö": "oe", "ä": "ae", "ß": "ss"})
+# Deliberate Turkish/Nordic source letters, not accidental lookalikes.
+_NON_DECOMPOSABLE_LETTERS = str.maketrans(
+    {"ø": "o", "ğ": "g", "ı": "i", "ş": "s", "ł": "l", "æ": "ae", "đ": "d"}  # noqa: RUF001
+)
+
+
+def _ascii_fold(normalized: str) -> str:
+    """Best-effort ASCII transliteration of already-_normalize()d text for tolerant matching."""
+    substituted = normalized.translate(_GERMAN_DIGRAPHS).translate(_NON_DECOMPOSABLE_LETTERS)
+    decomposed = unicodedata.normalize("NFD", substituted)
+    return "".join(character for character in decomposed if not unicodedata.combining(character))
+
+
 # The exact lookup phrasing recognized by _intent() below ("zeige ... das
 # profil von", "show (me) the profile of", "show me") coincidentally
 # collides with at least one real, short player name ("Show", a real
@@ -251,7 +276,8 @@ def _name_search_text(normalized: str) -> str:
 
 def _team_aliases(team_name: str) -> tuple[str, ...]:
     normalized = _normalize(team_name)
-    return TEAM_ALIASES.get(normalized, (normalized,))
+    manual = TEAM_ALIASES.get(normalized, ())
+    return (normalized, _ascii_fold(normalized), *manual)
 
 
 def _intent(normalized: str, named_players: list[str]) -> QueryIntent:
