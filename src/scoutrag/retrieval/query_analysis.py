@@ -4,7 +4,7 @@ import re
 import unicodedata
 
 from scoutrag.domain.player import PlayerSeasonProfile
-from scoutrag.domain.query import QueryIntent, QueryProfile
+from scoutrag.domain.query import QueryIntent, QueryProfile, TemporalScope
 
 POSITION_ALIASES: dict[str, tuple[str, ...]] = {
     "goalkeeper": ("torwart", "goalkeeper", "keeper"),
@@ -127,11 +127,12 @@ class RuleBasedQueryAnalyzer:
 
     def analyze(self, query: str) -> QueryProfile:
         normalized = _normalize(query)
+        name_search_text = _name_search_text(normalized)
         named_players = sorted(
             {
                 profile.player_name
                 for profile in self.profiles
-                if _normalize(profile.player_name) in normalized
+                if _normalize(profile.player_name) in name_search_text
             }
         )
         positions = [
@@ -166,7 +167,7 @@ class RuleBasedQueryAnalyzer:
                 if any(alias in normalized for alias in _team_aliases(team_name))
             }
         )
-        seasons = sorted(set(re.findall(r"\b20\d{2}/20\d{2}\b", normalized)))
+        seasons = _seasons(normalized)
         minimum_minutes = _minimum_minutes(normalized)
         result_count = _result_count(normalized)
         intent = _intent(normalized, named_players)
@@ -184,12 +185,33 @@ class RuleBasedQueryAnalyzer:
             minimum_minutes=minimum_minutes,
             result_count=result_count,
             expected_evidence_types=list(dict.fromkeys(requested_metrics)),
+            temporal_scope=_temporal_scope(normalized, seasons, self.profiles),
         )
 
 
 def _normalize(value: str) -> str:
     normalized = unicodedata.normalize("NFKC", value).casefold().strip()
     return " ".join(normalized.split())
+
+
+# The exact lookup phrasing recognized by _intent() below ("zeige ... das
+# profil von", "show (me) the profile of", "show me") coincidentally
+# collides with at least one real, short player name ("Show", a real
+# API-Football profile). Stripping only these specific multi-word command
+# constructions - not the bare word alone - lets "Show the profile of X"
+# resolve to X without also making a player genuinely named "Show"
+# permanently unmatchable in every other phrasing (for example "Compare
+# Show and X"). _intent() itself still inspects the unstripped, original
+# normalized text.
+_NAME_MATCH_STOPPHRASE_PATTERN = re.compile(
+    r"\bzeige(?:\s+mir)?\s+das\s+profil\s+von\b"
+    r"|\bshow\s+(?:me\s+)?the\s+profile\s+of\b"
+    r"|\bshow\s+me\b"
+)
+
+
+def _name_search_text(normalized: str) -> str:
+    return _NAME_MATCH_STOPPHRASE_PATTERN.sub(" ", normalized)
 
 
 def _team_aliases(team_name: str) -> tuple[str, ...]:
@@ -217,6 +239,42 @@ def _minimum_minutes(normalized: str) -> int | None:
     pattern = r"(?:mindestens|minimum|min\.?|at least)\s*(\d{2,5})\s*min"
     match = re.search(pattern, normalized)
     return int(match.group(1)) if match else None
+
+
+def _seasons(normalized: str) -> list[str]:
+    seasons = set(re.findall(r"\b20\d{2}/20\d{2}\b", normalized))
+    for start, short_end in re.findall(r"\b(20\d{2})/(\d{2})\b", normalized):
+        century = int(start[:2]) * 100
+        seasons.add(f"{start}/{century + int(short_end)}")
+    return sorted(seasons)
+
+
+def _temporal_scope(
+    normalized: str,
+    seasons: list[str],
+    profiles: tuple[PlayerSeasonProfile, ...],
+) -> TemporalScope:
+    if any(term in normalized for term in ("form", "letzten spiele", "recent", "last matches")):
+        return TemporalScope.RECENT_FORM
+    if any(
+        term in normalized
+        for term in (
+            "entwicklung",
+            "entwickelt",
+            "trend",
+            "konstant",
+            "verbessert",
+            "verschlechtert",
+        )
+    ):
+        return TemporalScope.TREND
+    latest_start = max((int(profile.season_name[:4]) for profile in profiles), default=0)
+    if any(int(season[:4]) < latest_start for season in seasons) or any(
+        term in normalized
+        for term in ("letzte saison", "vorherige saison", "historisch", "history")
+    ):
+        return TemporalScope.HISTORY
+    return TemporalScope.CURRENT
 
 
 def _result_count(normalized: str) -> int:

@@ -102,7 +102,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         candidate_pool_size=args.candidate_pool_size,
     )
     result = pipeline.search(args.query)
-    print(result.model_dump_json(indent=2))
+    # ASCII escaping keeps JSON portable on legacy Windows consoles using cp1252.
+    print(result.model_dump_json(indent=2, ensure_ascii=True))
     return 0
 
 
